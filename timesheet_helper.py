@@ -24,6 +24,7 @@ def replace_with_duration(text):
     END = "\033[0m"
 
     day_total_duration = timedelta()
+    weekly_total_duration = timedelta()
     day_tasks = []
     output = []
 
@@ -31,34 +32,44 @@ def replace_with_duration(text):
         is_day_line = re.match(r'^\s*•\s*(\w+day)', line)
         if is_day_line:
             if day_tasks:
-                day_tasks[0] += f' Total: {day_total_duration.total_seconds() / 3600:.2f}'
-                output.append('\n'.join(day_tasks) + '\n')
+                day_total_in_hours = day_total_duration.total_seconds() / 3600
+                day_tasks[0] = day_tasks[0].rstrip() + f' Total: {day_total_in_hours:.2f} hours'
+                output.append('\n'.join(day_tasks))
+                weekly_total_duration += day_total_duration
                 day_tasks = []
+                day_total_duration = timedelta()
 
             day = re.sub(r'^\s*•\s*(\w+day)', r'\1', line)
             day = re.sub(r'(\w+day)', BOLD + UNDERLINE + r'\1' + END, day)
+            output.append('')
             day_tasks.append(day)
-            day_total_duration = timedelta()
         else:
             timespans = re.finditer(pattern, line)
             total_duration = timedelta()
             for timespan in timespans:
-                total_duration += duration(timespan)
-                day_total_duration += duration(timespan)
+                span_duration = duration(timespan)
+                total_duration += span_duration
+                day_total_duration += span_duration
 
             total_duration_hours = total_duration.total_seconds() / 3600
             total_duration_hours = "{:.2f}".format(total_duration_hours)
 
             if re.search(pattern, line):
-                # Remove times and trailing commas
                 task = re.sub(pattern + ',?', '', line).strip()
-                task = re.sub(r'^\s*o\s*', '\t• ', task)
+                task = re.sub(r'^\s*o\s*', '• ', task)
                 task += f" {total_duration_hours}"
                 day_tasks.append(task)
 
     if day_tasks:
-        day_tasks[0] += f' Total: {day_total_duration.total_seconds() / 3600:.2f}'
-        output.append('\n'.join(day_tasks) + '\n')
+        day_total_in_hours = day_total_duration.total_seconds() / 3600
+        total_string = f'Total: {day_total_in_hours:.2f} hours'
+        day_string = day_tasks[0].ljust(20)  # Adjust the number as needed
+        day_tasks[0] = day_string + total_string
+        output.append('\n'.join(day_tasks))
+        weekly_total_duration += day_total_duration
+
+    weekly_total_hours = weekly_total_duration.total_seconds() / 3600
+    output.append(f'\nWeekly Total: {weekly_total_hours:.2f} hours')
 
     result = '\n'.join(output)
     return result
