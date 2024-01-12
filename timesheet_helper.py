@@ -2,6 +2,15 @@ import re
 from datetime import datetime, timedelta
 
 def replace_with_duration(text):
+    """
+    Replaces time durations in the given text with their corresponding durations in hours.
+
+    Args:
+        text (str): The input text containing time durations.
+
+    Returns:
+        str: The modified text with time durations replaced by their corresponding durations in hours.
+    """
     pattern = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
 
     def duration(match):

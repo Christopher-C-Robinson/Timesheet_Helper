@@ -1,6 +1,16 @@
 import re
 
 def remove_timespans(text):
+    """
+    Remove timespans from the given text and format it into a specific structure.
+
+    Args:
+        text (str): The input text containing timespans and tasks.
+
+    Returns:
+        str: The formatted text with timespans removed and tasks organized.
+
+    """
     pattern = r"\b\d{1,2}(:\d{1,2})?-\d{1,2}(:\d{1,2})?\b,? *"
     result = re.sub(pattern, "", text)
     lines = result.split('\n')
