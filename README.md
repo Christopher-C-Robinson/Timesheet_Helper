@@ -14,6 +14,8 @@ Timesheet Helper is a collection of Python scripts designed to process text-base
     - [remove\_times.py](#remove_timespy)
     - [timesheet\_helper.py](#timesheet_helperpy)
     - [timesheet.py](#timesheetpy)
+    - [azureDevopsAPI.py](#azuredevopsapipy)
+    - [extract\_failed\_tests\_from\_xml.py](#extract_failed_tests_from_xmlpy)
   - [Contributing](#contributing)
 
 ## Getting Started
@@ -62,6 +64,36 @@ This script defines a function `replace_with_duration` that replaces time spans 
 ### timesheet.py
 
 This script imports functions from the other two scripts and processes a text-based timesheet.
+
+### azureDevopsAPI.py
+
+This script fetches information about a specific test case from Azure DevOps using the Azure DevOps API.
+
+#### Usage
+
+1. Ensure you have the required environment variables set in a `.env` file:
+    - `API_VERSION`
+    - `ORGANIZATION`
+    - `PERSONAL_ACCESS_TOKEN`
+
+2. Run the script:
+
+```bash
+python azureDevopsAPI.py
+```
+
+### extract_failed_tests_from_xml.py
+
+This script extracts the names of all failed test cases from multiple XML files and copies the formatted list to the clipboard.
+
+#### Usage
+
+1. Ensure you have the required directories and file paths set in the script.
+2. Run the script:
+
+```bash
+python extract_failed_tests_from_xml.py
+```
 
 ## Contributing
 
