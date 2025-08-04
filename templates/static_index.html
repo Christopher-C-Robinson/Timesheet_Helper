@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timesheet Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            box-sizing: border-box;
+        }
+        .submit-btn {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 30px;
+        }
+        .submit-btn:hover {
+            background-color: #0056b3;
+        }
+        .results {
+            margin-top: 30px;
+            display: none;
+        }
+        .output-section {
+            margin-bottom: 30px;
+        }
+        .output-section h3 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .output-box {
+            background-color: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .example {
+            background-color: #e7f3ff;
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .example h4 {
+            margin-top: 0;
+            color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Timesheet Helper</h1>
+        
+        <div class="example">
+            <h4>How to use:</h4>
+            <p>Paste your bulleted timesheet from Microsoft Word below. Use this format:</p>
+            <pre>•	Monday
+o	task1 9:15-9:30, 10-12:15
+o	task2 9:30-10
+•	Tuesday
+o	task1 9-9:30, 10:30-12:15
+o	task2 9:30-10:30</pre>
+        </div>
+
+        <form id="timesheetForm">
+            <div class="form-group">
+                <label for="timesheet_text">Enter your timesheet data:</label>
+                <textarea name="timesheet_text" id="timesheet_text" placeholder="Paste your timesheet here..."></textarea>
+            </div>
+            <button type="submit" class="submit-btn">Process Timesheet</button>
+        </form>
+
+        <div class="results" id="results">
+            <div class="output-section">
+                <h3>Email Format (without time spans)</h3>
+                <div class="output-box" id="emailFormat"></div>
+            </div>
+            
+            <div class="output-section">
+                <h3>Duration Format (for timesheet entry)</h3>
+                <div class="output-box" id="durationFormat"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript implementation of timesheet processing functions
+        
+        function removeTimespans(text) {
+            const pattern = /\b\d{1,2}(:\d{1,2})?-\d{1,2}(:\d{1,2})?\b,? */g;
+            let result = text.replace(pattern, '');
+            const lines = result.split('\n');
+            
+            let dayTasks = [];
+            let output = [];
+            
+            for (let line of lines) {
+                const isDayLine = /^\s*•\s*(\w+day)/.test(line);
+                if (isDayLine) {
+                    if (dayTasks.length > 0) {
+                        output.push(dayTasks.join('\n') + '\n');
+                        dayTasks = [];
+                    }
+                    let day = line.replace(/^\s*•\s*(\w+day)/, '$1');
+                    // Note: Removing ANSI codes since we can't use them in HTML
+                    dayTasks.push(day);
+                } else {
+                    let task = line.replace(/^\s*o\s*/, '\t• ');
+                    dayTasks.push(task);
+                }
+            }
+            
+            if (dayTasks.length > 0) {
+                output.push(dayTasks.join('\n') + '\n');
+            }
+            
+            return output.join('\n');
+        }
+        
+        function replaceWithDuration(text) {
+            const pattern = /(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b/g;
+            
+            function calculateDuration(match, startHour, startMin, endHour, endMin) {
+                const startHourInt = parseInt(startHour);
+                const startMinInt = startMin ? parseInt(startMin.slice(1)) : 0;
+                let endHourInt = parseInt(endHour);
+                const endMinInt = endMin ? parseInt(endMin.slice(1)) : 0;
+                
+                if (endHourInt < startHourInt) {
+                    endHourInt += 12;
+                }
+                
+                const startTotalMin = startHourInt * 60 + startMinInt;
+                const endTotalMin = endHourInt * 60 + endMinInt;
+                const durationMin = endTotalMin - startTotalMin;
+                
+                return durationMin / 60; // Return hours as decimal
+            }
+            
+            const lines = text.split('\n');
+            let dayTotalDuration = 0;
+            let weeklyTotalDuration = 0;
+            let dayTasks = [];
+            let output = [];
+            
+            for (let line of lines) {
+                const isDayLine = /^\s*•\s*(\w+day)/.test(line);
+                if (isDayLine) {
+                    if (dayTasks.length > 0) {
+                        dayTasks[0] = dayTasks[0] + ` Total: ${dayTotalDuration.toFixed(2)} hours`;
+                        output.push(dayTasks.join('\n'));
+                        weeklyTotalDuration += dayTotalDuration;
+                        dayTasks = [];
+                        dayTotalDuration = 0;
+                    }
+                    
+                    let day = line.replace(/^\s*•\s*(\w+day)/, '$1');
+                    output.push('');
+                    dayTasks.push(day);
+                } else {
+                    let totalDuration = 0;
+                    let matches = [...line.matchAll(pattern)];
+                    
+                    for (let match of matches) {
+                        const duration = calculateDuration(match[0], match[1], match[2], match[3], match[4]);
+                        totalDuration += duration;
+                        dayTotalDuration += duration;
+                    }
+                    
+                    if (matches.length > 0) {
+                        let task = line.replace(pattern, '').replace(/,?\s*$/, '').trim();
+                        task = task.replace(/^\s*o\s*/, '• ');
+                        task += ` ${totalDuration.toFixed(2)}\n`;
+                        dayTasks.push(task);
+                    }
+                }
+            }
+            
+            if (dayTasks.length > 0) {
+                const dayString = dayTasks[0].padEnd(20);
+                const totalString = `Total: ${dayTotalDuration.toFixed(2)} hours`;
+                dayTasks[0] = dayString + totalString;
+                output.push(dayTasks.join('\n'));
+                weeklyTotalDuration += dayTotalDuration;
+            }
+            
+            output.push(`\nWeekly Total: ${weeklyTotalDuration.toFixed(2)} hours`);
+            
+            return output.join('\n');
+        }
+        
+        // Form submission handler
+        document.getElementById('timesheetForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const timesheetText = document.getElementById('timesheet_text').value;
+            
+            if (timesheetText.trim()) {
+                const emailFormat = removeTimespans(timesheetText);
+                const durationFormat = replaceWithDuration(timesheetText);
+                
+                document.getElementById('emailFormat').textContent = emailFormat;
+                document.getElementById('durationFormat').textContent = durationFormat;
+                document.getElementById('results').style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
