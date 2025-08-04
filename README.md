@@ -42,6 +42,24 @@ git clone https://github.com/Christopher-C-Robinson/Timesheet_Helper.git
 
 ## Usage
 
+### Web Interface (Recommended)
+
+1. Install the required dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the web application:
+```bash
+python app.py
+```
+
+3. Open your browser and go to `http://localhost:5000`
+4. Paste your bulleted timesheet from Microsoft Word into the text area
+5. Click "Process Timesheet" to get both email format and duration format outputs
+
+### Command Line Interface
+
 1. Copy your bulleted timesheet from Microsoft Word.
 2. Paste it within the `timesheet.py` script.
 3. Run the `timesheet.py` script.
@@ -52,6 +70,10 @@ python timesheet.py
 ```
 
 ## Scripts
+
+### app.py
+
+This script provides a web interface for the Timesheet Helper. It uses Flask to create a simple web application where users can paste their timesheet data and get both email and duration formats as output.
 
 ### remove_times.py
 
