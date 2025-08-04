@@ -34,6 +34,7 @@ def index():
         return render_template("index.html")
     else:
         return render_template("index.html")
+
 if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1", "yes")
     host = os.environ.get("FLASK_HOST", "127.0.0.1")
