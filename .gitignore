@@ -1,3 +1,8 @@
 /.DS_Store
 /__pycache__
 .env
+
+# Build artifacts (keep docs/ for GitHub Pages)
+build/
+*.pyc
+.pytest_cache/

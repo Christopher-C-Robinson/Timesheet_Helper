@@ -42,7 +42,14 @@ git clone https://github.com/Christopher-C-Robinson/Timesheet_Helper.git
 
 ## Usage
 
-### Web Interface (Recommended)
+### GitHub Pages (Recommended - No Installation Required)
+
+Visit the live application at: **https://christopher-c-robinson.github.io/Timesheet_Helper/**
+
+1. Paste your bulleted timesheet from Microsoft Word into the text area
+2. Click "Process Timesheet" to get both email format and duration format outputs
+
+### Local Flask Development
 
 1. Install the required dependencies:
 ```bash
@@ -57,6 +64,16 @@ python app.py
 3. Open your browser and go to `http://localhost:5000`
 4. Paste your bulleted timesheet from Microsoft Word into the text area
 5. Click "Process Timesheet" to get both email format and duration format outputs
+
+### Generating Static Site for GitHub Pages
+
+To regenerate the static site files:
+
+```bash
+python freeze.py
+```
+
+This will create/update the `docs/` directory with static HTML files that can be deployed to GitHub Pages.
 
 ### Command Line Interface
 
@@ -74,6 +91,10 @@ python timesheet.py
 ### app.py
 
 This script provides a web interface for the Timesheet Helper. It uses Flask to create a simple web application where users can paste their timesheet data and get both email and duration formats as output.
+
+### freeze.py
+
+This script converts the Flask application to static HTML files suitable for GitHub Pages deployment. It uses Frozen-Flask to generate static files in the `docs/` directory that preserve all the original functionality using client-side JavaScript.
 
 ### remove_times.py
 
@@ -116,6 +137,62 @@ This script extracts the names of all failed test cases from multiple XML files 
 ```bash
 python extract_failed_tests_from_xml.py
 ```
+
+## GitHub Pages Deployment
+
+This project is configured for automatic deployment to GitHub Pages. The static site is generated in the `docs/` directory and served directly from GitHub Pages.
+
+### Automatic Deployment
+
+The repository is configured to serve the static site from the `docs/` directory. Any changes pushed to the main branch will automatically update the live site at:
+**https://christopher-c-robinson.github.io/Timesheet_Helper/**
+
+### Manual Regeneration
+
+To manually regenerate the static site files:
+
+1. Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+2. Run the freeze script:
+```bash
+python freeze.py
+```
+
+3. Commit and push the updated `docs/` directory:
+```bash
+git add docs/
+git commit -m "Update static site"
+git push
+```
+
+### Local Testing
+
+To test the static site locally:
+
+```bash
+cd docs
+python -m http.server 8000
+```
+
+Then visit `http://localhost:8000` in your browser.
+
+## Converting from Flask to Static Site
+
+The conversion process involved:
+
+1. **Adding Frozen-Flask**: Used to generate static HTML files from Flask routes
+2. **JavaScript Conversion**: Ported Python timesheet processing logic to client-side JavaScript
+3. **Static Template**: Created a standalone HTML file with embedded CSS and JavaScript
+4. **Build Process**: Implemented `freeze.py` script to generate the static site
+
+All original functionality is preserved in the static version, including:
+- Timesheet text processing
+- Email format generation (removes time spans)
+- Duration format generation (calculates hours worked)
+- Weekly total calculations
 
 ## Contributing
 
