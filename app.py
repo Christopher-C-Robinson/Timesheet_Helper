@@ -32,8 +32,8 @@ def index():
                 input_text=timesheet_text,
             )
         return render_template("index.html")
-    else:
-        return render_template("index.html")
+    return render_template("index.html")
+
 
 if __name__ == "__main__":
     debug = os.environ.get("FLASK_DEBUG", "False").lower() in ("true", "1", "yes")
