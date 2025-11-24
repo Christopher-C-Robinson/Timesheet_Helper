@@ -1,0 +1,21 @@
+# Timesheet Helper Copilot Instructions
+- Purpose: small Python utilities for processing copy/pasted Microsoft Word timesheets plus a couple of Azure DevOps/test-report helpers.
+- Core flow (`timesheet.py`):
+  - Paste the Word bullet text into the `timesheet` string. Day headers are expected to start with the replacement-character bullet shown in source (appears as a black diamond/question mark) followed by a weekday; task lines start with `o` and include time spans like `8-12, 1-5`.
+  - `timesheet_helper.replace_with_duration` parses `HH[:MM]-HH[:MM]` spans in 12-hour format; if the end hour is less than the start, 12 hours are added (afternoon handling, not midnight crossing). Outputs per-task durations, per-day totals, and a weekly total with ANSI bold/underline for day headers.
+  - `remove_times.remove_timespans` strips the time spans but preserves the day/task grouping; uses the same day/task regex assumptions as `replace_with_duration`.
+  - Switching outputs: `timesheet.py` prints separators; uncomment the `remove_timespans` call to get an email-friendly list without durations, keep `replace_with_duration` to get hour totals.
+- Shared parsing conventions:
+  - Regex for days: `^\s*�?�\s*(\w+day)` (literal replacement-character bullet + weekday). Changing the bullet marker requires updating both helper modules.
+  - Task regex strips a leading `o` bullet and replaces it with the same replacement-character marker; keep that structure when modifying parsing or sample input.
+  - Time math assumes all spans stay within a single calendar day; overlapping spans are summed; comma-separated spans per line are supported.
+- Other utilities:
+  - `extract_failed_tests_from_xml.py` walks `~/Downloads` and `~/results/reports` for XML files containing “report” in the name; collects `<test-case result="Failed">` names, prints counts, and copies a `(name1|name2|...)` string to the clipboard via `pyperclip`. Adjust `dirs`/`file_paths` for other locations.
+  - `azureDevopsAPI.py` loads `.env` (`API_VERSION`, `ORGANIZATION`, `PERSONAL_ACCESS_TOKEN`) and fetches test plan suite info for `test_case_id` using the Azure DevOps REST API; prints JSON. Keep PATs in `.env`, not in code.
+- Running things:
+  - No repo-level requirements file; install ad-hoc deps as needed: `python -m pip install requests python-dotenv pyperclip`.
+  - Run from repo root: `python timesheet.py`, `python extract_failed_tests_from_xml.py`, `python azureDevopsAPI.py`.
+  - Scripts emit ANSI styling for bold/underline; if the Windows console shows raw codes, adjust both helper modules consistently.
+- Maintenance tips:
+  - Keep day/task regexes in `remove_times.py` and `timesheet_helper.py` in sync.
+  - When changing the timesheet sample, maintain the bullet structure (replacement-character day bullets, `o` task bullets, comma-separated spans) so parsing keeps working.
