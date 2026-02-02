@@ -1,6 +1,6 @@
 # Timesheet Helper
 
-Timesheet Helper is a collection of Python scripts designed to process text-based timesheets copied from Microsoft Word. The scripts can remove time spans, calculate the duration of time spans, and format the timesheet for either email or timesheet entry purposes.
+Timesheet Helper is a collection of Python scripts designed to process text-based timesheets copied from Microsoft Word, plus a few Azure DevOps/test-report helpers.
 
 ## Table of Contents
 
@@ -11,9 +11,11 @@ Timesheet Helper is a collection of Python scripts designed to process text-base
     - [Installation](#installation)
   - [Usage](#usage)
   - [Scripts](#scripts)
+    - [app.py](#apppy)
     - [remove\_times.py](#remove_timespy)
     - [timesheet\_helper.py](#timesheet_helperpy)
     - [timesheet.py](#timesheetpy)
+    - [task\_duration.py](#task_durationpy)
     - [azureDevopsAPI.py](#azuredevopsapipy)
     - [extract\_failed\_tests\_from\_xml.py](#extract_failed_tests_from_xmlpy)
   - [Contributing](#contributing)
@@ -40,6 +42,16 @@ Clone the repository to your local machine.
 git clone https://github.com/Christopher-C-Robinson/Timesheet_Helper.git
 ```
 
+Optional dependencies for helper scripts:
+
+```bash
+# Web app dependency
+python -m pip install -r requirements.txt
+
+# Optional utilities
+python -m pip install requests python-dotenv pyperclip python-docx
+```
+
 ## Usage
 
 ### Web Interface (Recommended)
@@ -49,14 +61,15 @@ git clone https://github.com/Christopher-C-Robinson/Timesheet_Helper.git
 pip install -r requirements.txt
 ```
 
-2. Run the web application:
+2. (Optional) Configure `FLASK_DEBUG`, `FLASK_HOST`, and `FLASK_PORT`.
+3. Run the web application:
 ```bash
 python app.py
 ```
 
-3. Open your browser and go to `http://localhost:5000`
-4. Paste your bulleted timesheet from Microsoft Word into the text area
-5. Click "Process Timesheet" to get both email format and duration format outputs
+4. Open your browser and go to `http://localhost:5000`
+5. Paste your bulleted timesheet from Microsoft Word into the text area
+6. Click "Process Timesheet" to get both email format and duration format outputs
 
 ### Command Line Interface
 
@@ -87,6 +100,19 @@ This script defines a function `replace_with_duration` that replaces time spans 
 
 This script imports functions from the other two scripts and processes a text-based timesheet.
 
+### task_duration.py
+
+This script scans a root directory for `.docx`/`.txt` files and totals time spans from lines that match a work item identifier. Configure `ROOT_DIR`, `WORK_ITEM`, `EXTENSIONS`, and `VERBOSE`. Install `python-docx` if you use `.docx` files.
+
+#### Usage
+
+1. Update `ROOT_DIR` and `WORK_ITEM` in the script.
+2. Run the script:
+
+```bash
+python task_duration.py
+```
+
 ### azureDevopsAPI.py
 
 This script fetches information about a specific test case from Azure DevOps using the Azure DevOps API.
@@ -98,7 +124,13 @@ This script fetches information about a specific test case from Azure DevOps usi
     - `ORGANIZATION`
     - `PERSONAL_ACCESS_TOKEN`
 
-2. Run the script:
+2. Install dependencies:
+
+```bash
+python -m pip install requests python-dotenv
+```
+
+3. Run the script:
 
 ```bash
 python azureDevopsAPI.py
@@ -111,7 +143,13 @@ This script extracts the names of all failed test cases from multiple XML files 
 #### Usage
 
 1. Ensure you have the required directories and file paths set in the script.
-2. Run the script:
+2. Install dependencies:
+
+```bash
+python -m pip install pyperclip
+```
+
+3. Run the script:
 
 ```bash
 python extract_failed_tests_from_xml.py
