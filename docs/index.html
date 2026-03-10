@@ -9,32 +9,34 @@
             font-family: Arial, sans-serif;
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 16px;
             background-color: #f5f5f5;
         }
         .container {
             background-color: white;
-            padding: 30px;
+            padding: 24px;
             border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
         h1 {
             color: #333;
             text-align: center;
-            margin-bottom: 30px;
+            margin-top: 0;
+            margin-bottom: 24px;
+            font-size: 1.6rem;
         }
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 16px;
         }
         label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 6px;
             font-weight: bold;
             color: #555;
         }
         textarea {
             width: 100%;
-            height: 200px;
+            height: 220px;
             padding: 10px;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -43,102 +45,176 @@
             resize: vertical;
             box-sizing: border-box;
         }
-        .submit-btn {
-            background-color: #007bff;
-            color: white;
-            padding: 12px 24px;
+        .btn-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+        .btn {
+            padding: 12px 20px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
-            margin-bottom: 30px;
+            flex: 1 1 auto;
+            min-width: 120px;
         }
-        .submit-btn:hover {
-            background-color: #0056b3;
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
         }
+        .btn-primary:hover { background-color: #0056b3; }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-secondary:hover { background-color: #545b62; }
+        .btn-outline {
+            background-color: white;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+        .btn-outline:hover { background-color: #e7f3ff; }
         .results {
-            margin-top: 30px;
+            margin-top: 24px;
             display: none;
         }
         .output-section {
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
-        .output-section h3 {
-            color: #333;
+        .output-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            gap: 8px;
+        }
+        .output-header h3 {
+            color: #333;
+            margin: 0;
+            font-size: 1rem;
+        }
+        .copy-btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        .copy-btn:hover { background-color: #0056b3; }
+        .copy-btn.copied {
+            background-color: #28a745;
         }
         .output-box {
             background-color: #f8f9fa;
             border: 1px solid #e9ecef;
             border-radius: 4px;
-            padding: 15px;
+            padding: 14px;
             white-space: pre-wrap;
             font-family: monospace;
             font-size: 14px;
-            max-height: 400px;
+            max-height: 350px;
             overflow-y: auto;
+            word-break: break-word;
         }
         .example {
             background-color: #e7f3ff;
             border-left: 4px solid #007bff;
-            padding: 15px;
+            padding: 14px;
             margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
         }
         .example h4 {
             margin-top: 0;
             color: #0056b3;
         }
+        .example pre {
+            margin: 0;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        .error-msg {
+            color: #dc3545;
+            font-size: 14px;
+            margin-top: 6px;
+            display: none;
+        }
+        /* Mobile-first responsive adjustments */
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding: 16px; }
+            h1 { font-size: 1.3rem; }
+            textarea { height: 180px; font-size: 13px; }
+            .btn { font-size: 15px; padding: 11px 14px; }
+            .output-box { font-size: 13px; max-height: 280px; }
+            .output-header h3 { font-size: 0.95rem; }
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Timesheet Helper</h1>
-        
+        <h1>📋 Timesheet Helper</h1>
+
         <div class="example">
             <h4>How to use:</h4>
-            <p>Paste your bulleted timesheet from Microsoft Word below. Use this format:</p>
-            <pre>•	Monday
-o	task1 9:15-9:30, 10-12:15
-o	task2 9:30-10
-•	Tuesday
-o	task1 9-9:30, 10:30-12:15
-o	task2 9:30-10:30</pre>
+            <p style="margin:0 0 8px 0;">Paste your bulleted timesheet from Microsoft Word. Format:</p>
+            <pre>•&#9;Monday
+o&#9;task1 9:15-9:30, 10-12:15
+o&#9;task2 9:30-10
+•&#9;Tuesday
+o&#9;task1 9-9:30, 10:30-12:15
+o&#9;task2 9:30-10:30</pre>
         </div>
 
-        <form id="timesheetForm">
-            <div class="form-group">
-                <label for="timesheet_text">Enter your timesheet data:</label>
-                <textarea name="timesheet_text" id="timesheet_text" placeholder="Paste your timesheet here..."></textarea>
-            </div>
-            <button type="submit" class="submit-btn">Process Timesheet</button>
-        </form>
+        <div class="form-group">
+            <label for="timesheet_text">Timesheet data:</label>
+            <textarea id="timesheet_text" placeholder="Paste your timesheet here..."></textarea>
+            <div class="error-msg" id="errorMsg">Please paste some timesheet data first.</div>
+        </div>
+
+        <div class="btn-row">
+            <button class="btn btn-primary" id="processBtn">Process Timesheet</button>
+            <button class="btn btn-outline" id="sampleBtn">Load Sample</button>
+            <button class="btn btn-secondary" id="clearBtn">Clear</button>
+        </div>
 
         <div class="results" id="results">
             <div class="output-section">
-                <h3>Email Format (without time spans)</h3>
+                <div class="output-header">
+                    <h3>Email Format (without time spans)</h3>
+                    <button class="copy-btn" id="copyEmail">Copy</button>
+                </div>
                 <div class="output-box" id="emailFormat"></div>
             </div>
-            
+
             <div class="output-section">
-                <h3>Duration Format (for timesheet entry)</h3>
+                <div class="output-header">
+                    <h3>Duration Format (for timesheet entry)</h3>
+                    <button class="copy-btn" id="copyDuration">Copy</button>
+                </div>
                 <div class="output-box" id="durationFormat"></div>
             </div>
         </div>
     </div>
 
     <script>
-        // JavaScript implementation of timesheet processing functions
-        
+        // ── Timesheet processing (mirrors timesheet_helper.py / remove_times.py) ──
+
         function removeTimespans(text) {
             const pattern = /\b\d{1,2}(:\d{1,2})?-\d{1,2}(:\d{1,2})?\b,? */g;
             let result = text.replace(pattern, '');
             const lines = result.split('\n');
-            
             let dayTasks = [];
             let output = [];
-            
+
             for (let line of lines) {
                 const isDayLine = /^\s*•\s*(\w+day)/.test(line);
                 if (isDayLine) {
@@ -153,40 +229,36 @@ o	task2 9:30-10:30</pre>
                     dayTasks.push(task);
                 }
             }
-            
             if (dayTasks.length > 0) {
                 output.push(dayTasks.join('\n') + '\n');
             }
-            
             return output.join('\n');
         }
-        
+
         function replaceWithDuration(text) {
             const pattern = /(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b/g;
-            
+
             function calculateDuration(match, startHour, startMin, endHour, endMin) {
                 const startHourInt = parseInt(startHour);
                 const startMinInt = startMin ? parseInt(startMin.slice(1)) : 0;
                 const endHourInt = parseInt(endHour);
                 const endMinInt = endMin ? parseInt(endMin.slice(1)) : 0;
-                
+
                 const startTotalMin = startHourInt * 60 + startMinInt;
                 let endTotalMin = endHourInt * 60 + endMinInt;
                 // If end hour is less than start hour, assume afternoon (add 12h), matching Python logic
                 if (endHourInt < startHourInt) {
                     endTotalMin += 12 * 60;
                 }
-                const durationMin = endTotalMin - startTotalMin;
-                
-                return durationMin / 60; // Return hours as decimal
+                return (endTotalMin - startTotalMin) / 60;
             }
-            
+
             const lines = text.split('\n');
             let dayTotalDuration = 0;
             let weeklyTotalDuration = 0;
             let dayTasks = [];
             let output = [];
-            
+
             for (let line of lines) {
                 const isDayLine = /^\s*•\s*(\w+day)/.test(line);
                 if (isDayLine) {
@@ -197,20 +269,17 @@ o	task2 9:30-10:30</pre>
                         dayTasks = [];
                         dayTotalDuration = 0;
                     }
-                    
                     let day = line.replace(/^\s*•\s*(\w+day)/, '$1');
                     output.push('');
                     dayTasks.push(day);
                 } else {
                     let totalDuration = 0;
                     let matches = [...line.matchAll(pattern)];
-                    
                     for (let match of matches) {
-                        const duration = calculateDuration(match[0], match[1], match[2], match[3], match[4]);
-                        totalDuration += duration;
-                        dayTotalDuration += duration;
+                        const d = calculateDuration(match[0], match[1], match[2], match[3], match[4]);
+                        totalDuration += d;
+                        dayTotalDuration += d;
                     }
-                    
                     if (matches.length > 0) {
                         let task = line.replace(pattern, '').replace(/,?\s*$/, '').trim();
                         task = task.replace(/^\s*o\s*/, '• ');
@@ -219,33 +288,92 @@ o	task2 9:30-10:30</pre>
                     }
                 }
             }
-            
             if (dayTasks.length > 0) {
                 dayTasks[0] = dayTasks[0] + ` Total: ${dayTotalDuration.toFixed(2)} hours`;
                 output.push(dayTasks.join('\n'));
                 weeklyTotalDuration += dayTotalDuration;
             }
-            
             output.push(`\nWeekly Total: ${weeklyTotalDuration.toFixed(2)} hours`);
-            
             return output.join('\n');
         }
-        
-        // Form submission handler
-        document.getElementById('timesheetForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const timesheetText = document.getElementById('timesheet_text').value;
-            
-            if (timesheetText.trim()) {
-                const emailFormat = removeTimespans(timesheetText);
-                const durationFormat = replaceWithDuration(timesheetText);
-                
-                document.getElementById('emailFormat').textContent = emailFormat;
-                document.getElementById('durationFormat').textContent = durationFormat;
-                document.getElementById('results').style.display = 'block';
-            }
+
+        // ── UI helpers ──
+
+        const SAMPLE_TIMESHEET = `\u2022\tMonday
+o\tStandup 8:30-8:45
+o\tCode review 8:45-10
+o\tFeature work 10-12, 1-3
+o\tTeam meeting 3-4
+\u2022\tTuesday
+o\tStandup 8:30-8:45
+o\tFeature work 8:45-12, 1-5
+\u2022\tWednesday
+o\tStandup 8:30-8:45
+o\tBug fixes 8:45-12, 1-3:30
+o\tCode review 3:30-5`;
+
+        document.getElementById('sampleBtn').addEventListener('click', function () {
+            document.getElementById('timesheet_text').value = SAMPLE_TIMESHEET;
+            document.getElementById('errorMsg').style.display = 'none';
         });
+
+        document.getElementById('clearBtn').addEventListener('click', function () {
+            document.getElementById('timesheet_text').value = '';
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('errorMsg').style.display = 'none';
+        });
+
+        document.getElementById('processBtn').addEventListener('click', function () {
+            const timesheetText = document.getElementById('timesheet_text').value;
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (!timesheetText.trim()) {
+                errorMsg.style.display = 'block';
+                return;
+            }
+            errorMsg.style.display = 'none';
+
+            document.getElementById('emailFormat').textContent = removeTimespans(timesheetText);
+            document.getElementById('durationFormat').textContent = replaceWithDuration(timesheetText);
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        function makeCopyButton(btnId, sourceId) {
+            document.getElementById(btnId).addEventListener('click', function () {
+                const text = document.getElementById(sourceId).textContent;
+                navigator.clipboard.writeText(text).then(() => {
+                    const btn = document.getElementById(btnId);
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                }).catch(() => {
+                    // Fallback for legacy browsers (e.g. non-secure context, older iOS Safari)
+                    // execCommand is deprecated but retained intentionally for backward compatibility
+                    const ta = document.createElement('textarea');
+                    ta.value = text;
+                    ta.style.position = 'fixed';
+                    ta.style.opacity = '0';
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    const btn = document.getElementById(btnId);
+                    btn.textContent = 'Copied!';
+                    btn.classList.add('copied');
+                    setTimeout(() => {
+                        btn.textContent = 'Copy';
+                        btn.classList.remove('copied');
+                    }, 2000);
+                });
+            });
+        }
+
+        makeCopyButton('copyEmail', 'emailFormat');
+        makeCopyButton('copyDuration', 'durationFormat');
     </script>
 </body>
 </html>
