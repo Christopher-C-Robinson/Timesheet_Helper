@@ -342,7 +342,8 @@ o\tCode review 3:30-5`;
         function makeCopyButton(btnId, sourceId) {
             document.getElementById(btnId).addEventListener('click', function () {
                 const text = document.getElementById(sourceId).textContent;
-                navigator.clipboard.writeText(text).then(() => {
+
+                function onCopied(btnId) {
                     const btn = document.getElementById(btnId);
                     btn.textContent = 'Copied!';
                     btn.classList.add('copied');
@@ -350,7 +351,9 @@ o\tCode review 3:30-5`;
                         btn.textContent = 'Copy';
                         btn.classList.remove('copied');
                     }, 2000);
-                }).catch(() => {
+                }
+
+                function execCommandFallback() {
                     // Fallback for legacy browsers (e.g. non-secure context, older iOS Safari)
                     // execCommand is deprecated but retained intentionally for backward compatibility
                     const ta = document.createElement('textarea');
@@ -361,14 +364,18 @@ o\tCode review 3:30-5`;
                     ta.select();
                     document.execCommand('copy');
                     document.body.removeChild(ta);
-                    const btn = document.getElementById(btnId);
-                    btn.textContent = 'Copied!';
-                    btn.classList.add('copied');
-                    setTimeout(() => {
-                        btn.textContent = 'Copy';
-                        btn.classList.remove('copied');
-                    }, 2000);
-                });
+                    onCopied(btnId);
+                }
+
+                // Guard: navigator.clipboard may not exist in non-secure contexts or older browsers;
+                // calling writeText() on an undefined object throws synchronously, bypassing .catch().
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        onCopied(btnId);
+                    }).catch(execCommandFallback);
+                } else {
+                    execCommandFallback();
+                }
             });
         }
 
