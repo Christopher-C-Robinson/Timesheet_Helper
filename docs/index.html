@@ -147,7 +147,6 @@ o	task2 9:30-10:30</pre>
                         dayTasks = [];
                     }
                     let day = line.replace(/^\s*•\s*(\w+day)/, '$1');
-                    // Note: Removing ANSI codes since we can't use them in HTML
                     dayTasks.push(day);
                 } else {
                     let task = line.replace(/^\s*o\s*/, '\t• ');
@@ -168,15 +167,15 @@ o	task2 9:30-10:30</pre>
             function calculateDuration(match, startHour, startMin, endHour, endMin) {
                 const startHourInt = parseInt(startHour);
                 const startMinInt = startMin ? parseInt(startMin.slice(1)) : 0;
-                let endHourInt = parseInt(endHour);
+                const endHourInt = parseInt(endHour);
                 const endMinInt = endMin ? parseInt(endMin.slice(1)) : 0;
                 
-                if (endHourInt < startHourInt) {
-                    endHourInt += 12;
-                }
-                
                 const startTotalMin = startHourInt * 60 + startMinInt;
-                const endTotalMin = endHourInt * 60 + endMinInt;
+                let endTotalMin = endHourInt * 60 + endMinInt;
+                // If end time is less than or equal to start time, assume it crosses midnight
+                if (endTotalMin <= startTotalMin) {
+                    endTotalMin += 24 * 60;
+                }
                 const durationMin = endTotalMin - startTotalMin;
                 
                 return durationMin / 60; // Return hours as decimal
@@ -222,9 +221,7 @@ o	task2 9:30-10:30</pre>
             }
             
             if (dayTasks.length > 0) {
-                const dayString = dayTasks[0].padEnd(20);
-                const totalString = `Total: ${dayTotalDuration.toFixed(2)} hours`;
-                dayTasks[0] = dayString + totalString;
+                dayTasks[0] = dayTasks[0] + ` Total: ${dayTotalDuration.toFixed(2)} hours`;
                 output.push(dayTasks.join('\n'));
                 weeklyTotalDuration += dayTotalDuration;
             }

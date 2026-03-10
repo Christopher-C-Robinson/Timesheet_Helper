@@ -10,7 +10,6 @@ import os
 import shutil
 from flask import Flask
 from flask_frozen import Freezer
-from app import app
 
 # Create a static version of the app that serves the static template
 static_app = Flask(__name__)
