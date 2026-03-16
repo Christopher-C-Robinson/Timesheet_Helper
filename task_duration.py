@@ -6,7 +6,7 @@ from typing import Iterable, List
 
 TIME_PATTERN = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
 ROOT_DIR = Path(r"C:\Users\crobinson\OneDrive - OmniByte Technology, Inc\Weekly Updates")
-WORK_ITEM = "30583"  # Set your ADO work item number here or Substring to match
+WORK_ITEM = "scim"  # Set your ADO work item number here or Substring to match
 EXTENSIONS = [".docx"]  # You can add ".txt" if you also store text copies
 VERBOSE = False  # Set to True to see warnings and per-file info
 
@@ -58,7 +58,7 @@ def extract_lines(path: Path) -> List[str]:
 
 
 def main() -> None:
-    work_item_pattern = re.compile(rf"\b{re.escape(WORK_ITEM)}\b")
+    work_item_pattern = re.compile(rf"\b{re.escape(WORK_ITEM)}\b", re.IGNORECASE)
     total_duration = timedelta()
     matches_found = 0
 
