@@ -1,6 +1,8 @@
+import re
 import pytest
 import timesheet_helper
 import task_duration
+import remove_times
 
 
 def extract_hours(line):
@@ -132,7 +134,6 @@ class TestTimespanEdgeCases:
         """Task name must not contain a leftover standalone period after spans are stripped."""
         text = "• Monday\no Task 10:30-11:30. 12-5\n"
         result = timesheet_helper.replace_with_duration(text)
-        import re
         clean = re.sub(r'\033\[[0-9;]*m', '', result)
         for line in clean.split('\n'):
             if 'Task' in line:
@@ -209,7 +210,6 @@ class TestAcceptanceCriteria:
 
     def test_wednesday_qa_task_no_leftover_period(self, result):
         """Wednesday QA task line (with period-separated spans) must not contain a leftover period."""
-        import re
         for line in get_day_block(result, "Wednesday"):
             if 'QA Task 36119' in line:
                 # A leftover separator period appears as ' . ' (space-period-space) before hours
@@ -273,13 +273,10 @@ class TestRemoveTimes:
     """Unit tests for remove_times.remove_timespans separator cleanup."""
 
     def _strip_ansi(self, text):
-        import re
         return re.sub(r'\033\[[0-9;]*m', '', text)
 
     def test_period_separator_removed(self):
         """Period between spans (e.g. '10:30-11:30. 12-5') must not appear in output."""
-        import re
-        import remove_times
         text = "• Wednesday\no QA Task 10:30-11:30. 12-5\n"
         result = self._strip_ansi(remove_times.remove_timespans(text))
         for line in result.split('\n'):
@@ -290,7 +287,6 @@ class TestRemoveTimes:
 
     def test_comma_separator_removed(self):
         """Comma between spans must not appear in output."""
-        import remove_times
         text = "• Monday\no Task 8:45-9, 9:45-12\n"
         result = self._strip_ansi(remove_times.remove_timespans(text))
         for line in result.split('\n'):
