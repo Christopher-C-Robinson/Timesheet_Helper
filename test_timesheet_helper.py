@@ -1,5 +1,6 @@
 import pytest
 import timesheet_helper
+import task_duration
 
 
 def extract_hours(line):
@@ -187,3 +188,48 @@ class TestAcceptanceCriteria:
         """Total Thursday should be 16.0 h."""
         total = extract_day_total(result, "Thursday")
         assert total == pytest.approx(16.0), f"Expected 16.0 h for Thursday total, got {total}"
+
+
+# ---------------------------------------------------------------------------
+# task_duration.duration_from_line edge-case tests
+# ---------------------------------------------------------------------------
+
+
+class TestTaskDurationFromLine:
+    """Unit tests for task_duration.duration_from_line edge cases."""
+
+    def _hours(self, span: str) -> float:
+        """Return hours for a single time span embedded in a task line."""
+        return task_duration.duration_from_line(f"Some Task {span}").total_seconds() / 3600
+
+    def test_same_hour_end_before_start_minutes(self):
+        """12:45-12 should be 11.25 h (end minutes < start minutes, same hour)."""
+        assert self._hours("12:45-12") == pytest.approx(11.25)
+
+    def test_one_to_twelve(self):
+        """1-12 should be 11.0 h (end > start, no afternoon adjustment needed)."""
+        assert self._hours("1-12") == pytest.approx(11.0)
+
+    def test_twelve_to_one(self):
+        """12-1 should be 1.0 h (end < start triggers +12)."""
+        assert self._hours("12-1") == pytest.approx(1.0)
+
+    def test_afternoon_crossover(self):
+        """12:45-1:45 should be 1.0 h."""
+        assert self._hours("12:45-1:45") == pytest.approx(1.0)
+
+    def test_simple_morning_span(self):
+        """8:45-12:15 should be 3.5 h."""
+        assert self._hours("8:45-12:15") == pytest.approx(3.5)
+
+    def test_cross_noon(self):
+        """8-5 should be 9.0 h (end < start triggers +12)."""
+        assert self._hours("8-5") == pytest.approx(9.0)
+
+    def test_nine_fortyfive_to_twelve(self):
+        """9:45-12 should be 2.25 h."""
+        assert self._hours("9:45-12") == pytest.approx(2.25)
+
+    def test_comma_separated_spans(self):
+        """10-12, 1-12, 1-2 should sum to 14.0 h."""
+        assert self._hours("10-12, 1-12, 1-2") == pytest.approx(14.0)
