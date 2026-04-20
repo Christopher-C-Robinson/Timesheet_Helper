@@ -246,8 +246,8 @@ o&#9;task2 9:30-10:30</pre>
 
                 const startTotalMin = startHourInt * 60 + startMinInt;
                 let endTotalMin = endHourInt * 60 + endMinInt;
-                // If end hour is less than start hour, assume afternoon (add 12h), matching Python logic
-                if (endHourInt < startHourInt) {
+                // If end total minutes is less than start total minutes, assume afternoon (add 12h), matching Python logic
+                if (endTotalMin < startTotalMin) {
                     endTotalMin += 12 * 60;
                 }
                 return (endTotalMin - startTotalMin) / 60;
