@@ -142,6 +142,17 @@ class TestTimespanEdgeCases:
                     f"Leftover standalone period in task line: {repr(line)}"
                 break
 
+    def test_comma_separated_spans_no_comma_in_output(self):
+        """Multiple comma-separated spans must not leave a leftover comma in the task line."""
+        text = "• Monday\no Task 8:45-9, 9:45-12, 12:45-12\n"
+        result = timesheet_helper.replace_with_duration(text)
+        clean = re.sub(r'\033\[[0-9;]*m', '', result)
+        for line in clean.split('\n'):
+            if 'Task' in line:
+                assert ',' not in line, \
+                    f"Leftover comma in task line: {repr(line)}"
+                break
+
 
 # ---------------------------------------------------------------------------
 # Full-sample acceptance-criteria tests
@@ -217,6 +228,24 @@ class TestAcceptanceCriteria:
                     f"Leftover standalone period in Wednesday task: {repr(line)}"
                 return
         pytest.fail("Wednesday QA Task 36119 line not found")
+
+    def test_tuesday_qa_task_no_comma(self, result):
+        """Tuesday QA task line (with comma-separated spans) must not contain a leftover comma."""
+        for line in get_day_block(result, "Tuesday"):
+            if 'QA Task 36119' in line:
+                assert ',' not in line, \
+                    f"Leftover comma in Tuesday QA task line: {repr(line)}"
+                return
+        pytest.fail("Tuesday QA Task 36119 line not found")
+
+    def test_thursday_qa_task_no_comma(self, result):
+        """Thursday QA task line (with comma-separated spans) must not contain a leftover comma."""
+        for line in get_day_block(result, "Thursday"):
+            if 'QA Task 36119' in line:
+                assert ',' not in line, \
+                    f"Leftover comma in Thursday QA task line: {repr(line)}"
+                return
+        pytest.fail("Thursday QA Task 36119 line not found")
 
 
 # ---------------------------------------------------------------------------
