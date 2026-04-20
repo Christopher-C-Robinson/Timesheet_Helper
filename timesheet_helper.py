@@ -19,11 +19,11 @@ def replace_with_duration(text):
         end_hour = int(match.group(3))
         end_minute = int(match.group(4)[1:]) if match.group(4) else 0
 
-        if end_hour < start_hour:
-            end_hour += 12
-
         start = datetime(year=2000, month=1, day=1, hour=start_hour, minute=start_minute)
         end = datetime(year=2000, month=1, day=1, hour=end_hour, minute=end_minute)
+
+        if end < start:
+            end += timedelta(hours=12)
 
         return end - start
 
