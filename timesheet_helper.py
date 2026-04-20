@@ -64,7 +64,7 @@ def replace_with_duration(text):
             total_duration_hours = "{:.2f}".format(total_duration_hours)
 
             if re.search(pattern, line):
-                task = re.sub(pattern + ',?', '', line).strip()
+                task = re.sub(pattern + r'[,.]?', '', line).strip()
                 task = re.sub(r'^\s*o\s*', '• ', task)
                 task += f" {total_duration_hours}\n"  # Add a newline character here
                 day_tasks.append(task)
