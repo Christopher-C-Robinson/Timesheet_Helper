@@ -18,6 +18,8 @@ TIME_PATTERN = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
 ROOT_DIR = Path(r"C:\Users\crobinson\OneDrive - OmniByte Technology, Inc\Weekly Updates")
 WORK_ITEM = "38187"  # Set your ADO work item number here or Substring to match
 EXTENSIONS = [".docx"]  # You can add ".txt" if you also store text copies
+CLOUD_MODE = "word-refresh"  # Use "word-refresh", "trust-local", or "fail"
+INCLUDE_UNSAVED_WORD = False  # Set True to include unsaved open Word document text
 VERBOSE = False  # Set to True to see warnings and per-file info
 
 
@@ -629,7 +631,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--cloud-mode",
         choices=("fail", "trust-local", "word-refresh"),
-        default="fail",
+        default=CLOUD_MODE,
         help=(
             "How to handle OneDrive/cloud-backed files: fail, trust local disk copies, "
             "or read .docx files through Microsoft Word."
@@ -638,6 +640,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--include-unsaved-word",
         action="store_true",
+        default=INCLUDE_UNSAVED_WORD,
         help="Read live open Word documents even when Word reports unsaved changes.",
     )
     parser.add_argument(

@@ -123,17 +123,25 @@ This script imports functions from the other two scripts and processes a text-ba
 
 ### task_duration.py
 
-This script scans a root directory for `.docx`/`.txt` files and totals time spans from lines that match a work item identifier. It is OneDrive-aware: by default it refuses to silently read cloud-backed files because the local copy may be stale. Install `python-docx` if you use `.docx` files.
+This script scans a root directory for `.docx`/`.txt` files and totals time spans from lines that match a work item identifier. It is OneDrive-aware: direct runs default to reading `.docx` files through Microsoft Word so stale local OneDrive copies are less likely to be trusted silently. Install `python-docx` if you use `.docx` files from disk.
 
 #### Usage
 
-Use a local, non-cloud folder:
+Run directly from an editor runner, using the constants at the top of `task_duration.py`:
+
+```bash
+python task_duration.py
+```
+
+`CLOUD_MODE` defaults to `word-refresh`, so direct runs read `.docx` files through Microsoft Word for better OneDrive accuracy. Set `WORK_ITEM`, `ROOT_DIR`, `CLOUD_MODE`, `INCLUDE_UNSAVED_WORD`, and `VERBOSE` in the script when using an editor runner.
+
+Use a local, non-cloud folder from the command line:
 
 ```bash
 python task_duration.py --work-item 38187 --root "C:\path\to\Weekly Updates"
 ```
 
-Use OneDrive files after confirming OneDrive says the folder is up to date:
+Use OneDrive files from local disk after confirming OneDrive says the folder is up to date:
 
 ```bash
 python task_duration.py --work-item 38187 --cloud-mode trust-local
