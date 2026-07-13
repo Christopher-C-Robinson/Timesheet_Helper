@@ -132,7 +132,7 @@ class TestTimespanEdgeCases:
 
     def test_period_separated_spans_no_period_in_output(self):
         """Task name must not contain a leftover standalone period after spans are stripped."""
-        text = "• Monday\no Task 12345:30-11:30. 12-5\n"
+        text = "• Monday\no Sample item 10:30-11:30. 12-5\n"
         result = timesheet_helper.replace_with_duration(text)
         clean = re.sub(r'\033\[[0-9;]*m', '', result)
         for line in clean.split('\n'):
@@ -144,7 +144,7 @@ class TestTimespanEdgeCases:
 
     def test_comma_separated_spans_no_comma_in_output(self):
         """Multiple comma-separated spans must not leave a leftover comma in the task line."""
-        text = "• Monday\no Task 12345:45-9, 9:45-12, 12:45-12\n"
+        text = "• Monday\no Sample item 8:45-9, 9:45-12, 12:45-12\n"
         result = timesheet_helper.replace_with_duration(text)
         clean = re.sub(r'\033\[[0-9;]*m', '', result)
         for line in clean.split('\n'):
@@ -219,8 +219,8 @@ class TestAcceptanceCriteria:
         total = extract_day_total(result, "Thursday")
         assert total == pytest.approx(16.0), f"Expected 16.0 h for Thursday total, got {total}"
 
-    def test_wednesday_qa_task_no_leftover_period(self, result):
-        """Wednesday QA task line (with period-separated spans) must not contain a leftover period."""
+    def test_wednesday_example_task_no_leftover_period(self, result):
+        """Wednesday example task line (with period-separated spans) must not contain a leftover period."""
         for line in get_day_block(result, "Wednesday"):
             if 'Example Task 12345' in line:
                 # A leftover separator period appears as ' . ' (space-period-space) before hours
@@ -229,21 +229,21 @@ class TestAcceptanceCriteria:
                 return
         pytest.fail("Wednesday example task line not found")
 
-    def test_tuesday_qa_task_no_comma(self, result):
-        """Tuesday QA task line (with comma-separated spans) must not contain a leftover comma."""
+    def test_tuesday_example_task_no_comma(self, result):
+        """Tuesday example task line (with comma-separated spans) must not contain a leftover comma."""
         for line in get_day_block(result, "Tuesday"):
             if 'Example Task 12345' in line:
                 assert ',' not in line, \
-                    f"Leftover comma in Tuesday QA task line: {repr(line)}"
+                    f"Leftover comma in Tuesday example task line: {repr(line)}"
                 return
         pytest.fail("Tuesday example task line not found")
 
-    def test_thursday_qa_task_no_comma(self, result):
-        """Thursday QA task line (with comma-separated spans) must not contain a leftover comma."""
+    def test_thursday_example_task_no_comma(self, result):
+        """Thursday example task line (with comma-separated spans) must not contain a leftover comma."""
         for line in get_day_block(result, "Thursday"):
             if 'Example Task 12345' in line:
                 assert ',' not in line, \
-                    f"Leftover comma in Thursday QA task line: {repr(line)}"
+                    f"Leftover comma in Thursday example task line: {repr(line)}"
                 return
         pytest.fail("Thursday example task line not found")
 
@@ -306,20 +306,20 @@ class TestRemoveTimes:
 
     def test_period_separator_removed(self):
         """Period between spans (e.g. '10:30-11:30. 12-5') must not appear in output."""
-        text = "• Wednesday\no Example Task 12345:30-11:30. 12-5\n"
+        text = "• Wednesday\no Sample item 10:30-11:30. 12-5\n"
         result = self._strip_ansi(remove_times.remove_timespans(text))
         for line in result.split('\n'):
-            if 'QA Task' in line:
+            if 'Sample item' in line:
                 assert '.' not in line, f"Leftover period in remove_timespans output: {repr(line)}"
                 return
-        pytest.fail("QA Task line not found in remove_timespans output")
+        pytest.fail("Sample item line not found in remove_timespans output")
 
     def test_comma_separator_removed(self):
         """Comma between spans must not appear in output."""
-        text = "• Monday\no Task 12345:45-9, 9:45-12\n"
+        text = "• Monday\no Sample item 8:45-9, 9:45-12\n"
         result = self._strip_ansi(remove_times.remove_timespans(text))
         for line in result.split('\n'):
-            if 'Task' in line:
+            if 'Sample item' in line:
                 assert ',' not in line, f"Leftover comma in remove_timespans output: {repr(line)}"
                 return
-        pytest.fail("Task line not found in remove_timespans output")
+        pytest.fail("Sample item line not found in remove_timespans output")
