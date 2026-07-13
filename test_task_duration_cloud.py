@@ -211,3 +211,12 @@ def test_duplicate_filename_open_docs_are_ambiguous():
 
     with pytest.raises(task_duration.AmbiguousWordDocumentError):
         resolver.find_open_document(target)
+
+
+def test_parser_defaults_match_direct_runner_constants():
+    args = task_duration.build_parser().parse_args([])
+
+    assert args.work_item == task_duration.WORK_ITEM
+    assert args.root == task_duration.ROOT_DIR
+    assert args.cloud_mode == task_duration.CLOUD_MODE
+    assert args.include_unsaved_word == task_duration.INCLUDE_UNSAVED_WORD
