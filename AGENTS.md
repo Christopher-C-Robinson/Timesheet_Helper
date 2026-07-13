@@ -13,9 +13,9 @@
   - Flask form at `/` renders `templates/index.html`; processes the same timesheet text and strips ANSI codes for web display.
   - Configure with `FLASK_DEBUG`, `FLASK_HOST`, `FLASK_PORT` env vars.
 - Other utilities:
-  - `task_duration.py` scans `ROOT_DIR` for files with `EXTENSIONS` and sums time spans on lines that match `WORK_ITEM`. Uses `python-docx` for `.docx` files; update the default Windows path and work item values for your environment.
+  - `task_duration.py` scans `TASK_DURATION_ROOT`/`ROOT_DIR` for files with `EXTENSIONS` and sums time spans on lines that match `TASK_DURATION_WORK_ITEM`/`WORK_ITEM`. Keep machine-specific paths and work item values in `.env`, not in committed code. Uses `python-docx` for `.docx` disk reads and Word automation for `word-refresh`.
   - `extract_failed_tests_from_xml.py` walks `~/Downloads` and `~/results/reports` for XML files containing "report" in the name; collects `<test-case result="Failed">` names, prints counts, and copies a `(name1|name2|...)` string to the clipboard via `pyperclip`. Adjust `dirs`/`file_paths` for other locations.
-  - `azureDevopsAPI.py` loads `.env` (`AZURE_DEVOPS_API_VERSION`, `AZURE_DEVOPS_ORGANIZATION`, `AZURE_DEVOPS_PAT`) and fetches test plan suite info for `test_case_id` using the Azure DevOps REST API; prints JSON. Keep PATs in `.env`, not in code.
+  - `azureDevopsAPI.py` loads `.env` (`AZURE_DEVOPS_API_VERSION`, `AZURE_DEVOPS_ORGANIZATION`, `AZURE_DEVOPS_TEST_CASE_ID`, `AZURE_DEVOPS_PAT`) and fetches test plan suite info using the Azure DevOps REST API; prints JSON. Keep PATs in `.env`, not in code.
 - Running things:
   - `requirements.txt` provides Flask for the web app. Install other deps as needed: `python -m pip install requests python-dotenv pyperclip python-docx`.
   - Run from repo root: `python timesheet.py`, `python app.py`, `python extract_failed_tests_from_xml.py`, `python azureDevopsAPI.py`, `python task_duration.py`.

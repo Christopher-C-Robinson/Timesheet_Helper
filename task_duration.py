@@ -15,12 +15,83 @@ from urllib.parse import unquote, urlparse
 
 
 TIME_PATTERN = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
-ROOT_DIR = Path(r"C:\Users\you\OneDrive - Example Org\Timesheet Notes")
-WORK_ITEM = "12345"  # Set your ADO work item number here or Substring to match
-EXTENSIONS = [".docx"]  # You can add ".txt" if you also store text copies
-CLOUD_MODE = "word-refresh"  # Use "word-refresh", "trust-local", or "fail"
-INCLUDE_UNSAVED_WORD = False  # Set True to include unsaved open Word document text
-VERBOSE = False  # Set to True to see warnings and per-file info
+DEFAULT_ROOT_DIR = Path.cwd()
+DEFAULT_WORK_ITEM = "12345"
+DEFAULT_EXTENSIONS = [".docx"]
+DEFAULT_CLOUD_MODE = "fail"
+
+
+def parse_dotenv_line(line: str) -> Optional[Tuple[str, str]]:
+    stripped = line.strip()
+    if not stripped or stripped.startswith("#") or "=" not in stripped:
+        return None
+    if stripped.startswith("export "):
+        stripped = stripped[len("export ") :].lstrip()
+
+    key, value = stripped.split("=", 1)
+    key = key.strip()
+    value = value.strip().strip("'\"")
+    if not key:
+        return None
+    return key, value
+
+
+def load_dotenv_file() -> None:
+    """Load simple KEY=value settings without requiring python-dotenv."""
+    candidates = [Path.cwd() / ".env", Path(__file__).resolve().with_name(".env")]
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        if not candidate.exists():
+            continue
+        for line in candidate.read_text(encoding="utf-8").splitlines():
+            parsed = parse_dotenv_line(line)
+            if parsed is None:
+                continue
+            key, value = parsed
+            os.environ.setdefault(key, value)
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().casefold() in {"1", "true", "yes", "y", "on"}
+
+
+def env_path(name: str, default: Path) -> Path:
+    value = os.getenv(name)
+    if not value:
+        return default
+    return Path(value).expanduser()
+
+
+def env_list(name: str, default: Sequence[str]) -> List[str]:
+    value = os.getenv(name)
+    if not value:
+        return list(default)
+    return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def env_choice(name: str, default: str, choices: Sequence[str]) -> str:
+    value = os.getenv(name, default).strip().casefold()
+    return value if value in choices else default
+
+
+load_dotenv_file()
+
+ROOT_DIR = env_path("TASK_DURATION_ROOT", DEFAULT_ROOT_DIR)
+WORK_ITEM = os.getenv("TASK_DURATION_WORK_ITEM", DEFAULT_WORK_ITEM)
+EXTENSIONS = env_list("TASK_DURATION_EXTENSIONS", DEFAULT_EXTENSIONS)
+CLOUD_MODE = env_choice(
+    "TASK_DURATION_CLOUD_MODE",
+    DEFAULT_CLOUD_MODE,
+    ("fail", "trust-local", "word-refresh"),
+)
+INCLUDE_UNSAVED_WORD = env_bool("TASK_DURATION_INCLUDE_UNSAVED_WORD", False)
+VERBOSE = env_bool("TASK_DURATION_VERBOSE", False)
 
 
 class TaskDurationError(Exception):
@@ -620,13 +691,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--work-item",
         default=WORK_ITEM,
-        help="Work item number or exact token to match. Defaults to WORK_ITEM in the script.",
+        help=(
+            "Work item number or exact token to match. Defaults to "
+            "TASK_DURATION_WORK_ITEM from .env, or a generic placeholder."
+        ),
     )
     parser.add_argument(
         "--root",
         type=Path,
         default=ROOT_DIR,
-        help="Root folder to scan for timesheet files.",
+        help="Root folder to scan. Defaults to TASK_DURATION_ROOT from .env, or the current folder.",
     )
     parser.add_argument(
         "--cloud-mode",
@@ -634,20 +708,27 @@ def build_parser() -> argparse.ArgumentParser:
         default=CLOUD_MODE,
         help=(
             "How to handle OneDrive/cloud-backed files: fail, trust local disk copies, "
-            "or read .docx files through Microsoft Word."
+            "or read .docx files through Microsoft Word. Defaults to "
+            "TASK_DURATION_CLOUD_MODE from .env, or fail."
         ),
     )
     parser.add_argument(
         "--include-unsaved-word",
         action="store_true",
         default=INCLUDE_UNSAVED_WORD,
-        help="Read live open Word documents even when Word reports unsaved changes.",
+        help=(
+            "Read live open Word documents even when Word reports unsaved changes. "
+            "Can also be set with TASK_DURATION_INCLUDE_UNSAVED_WORD=true."
+        ),
     )
     parser.add_argument(
         "--verbose",
         action="store_true",
         default=VERBOSE,
-        help="Show warnings, per-file source info, and no-match diagnostics.",
+        help=(
+            "Show warnings, per-file source info, and no-match diagnostics. "
+            "Can also be set with TASK_DURATION_VERBOSE=true."
+        ),
     )
     return parser
 

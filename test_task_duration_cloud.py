@@ -220,3 +220,19 @@ def test_parser_defaults_match_direct_runner_constants():
     assert args.root == task_duration.ROOT_DIR
     assert args.cloud_mode == task_duration.CLOUD_MODE
     assert args.include_unsaved_word == task_duration.INCLUDE_UNSAVED_WORD
+
+
+def test_parse_dotenv_line_strips_quotes_and_export_prefix():
+    assert task_duration.parse_dotenv_line('export TASK_DURATION_WORK_ITEM="12345"') == (
+        "TASK_DURATION_WORK_ITEM",
+        "12345",
+    )
+
+
+def test_env_list_splits_comma_separated_values(monkeypatch):
+    monkeypatch.setenv("TASK_DURATION_EXTENSIONS_TEST", ".docx, .txt")
+
+    assert task_duration.env_list("TASK_DURATION_EXTENSIONS_TEST", [".docx"]) == [
+        ".docx",
+        ".txt",
+    ]

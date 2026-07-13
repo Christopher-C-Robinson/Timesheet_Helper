@@ -52,6 +52,17 @@ python -m pip install -r requirements.txt
 python -m pip install requests python-dotenv pyperclip python-docx
 ```
 
+For local machine-specific settings, copy the example environment file and edit the
+copy. The real `.env` file is ignored by Git.
+
+```bash
+# Windows
+copy .env.example .env
+
+# macOS/Linux
+cp .env.example .env
+```
+
 ## Usage
 
 ### GitHub Pages (Recommended - No Installation Required)
@@ -123,7 +134,16 @@ This script imports functions from the other two scripts and processes a text-ba
 
 ### task_duration.py
 
-This script scans a root directory for `.docx`/`.txt` files and totals time spans from lines that match a work item identifier. It is OneDrive-aware: direct runs default to reading `.docx` files through Microsoft Word so stale local OneDrive copies are less likely to be trusted silently. Install `python-docx` if you use `.docx` files from disk.
+This script scans a root directory for `.docx`/`.txt` files and totals time spans from lines that match a work item identifier. It is OneDrive-aware and can read `.docx` files through Microsoft Word so stale local OneDrive copies are less likely to be trusted silently. Install `python-docx` if you use `.docx` files from disk.
+
+Machine-specific defaults should live in `.env`, not in the public script:
+
+```dotenv
+TASK_DURATION_ROOT=C:\Users\you\OneDrive - Example Org\Timesheet Notes
+TASK_DURATION_WORK_ITEM=12345
+TASK_DURATION_CLOUD_MODE=word-refresh
+TASK_DURATION_VERBOSE=false
+```
 
 #### Usage
 
@@ -133,7 +153,7 @@ Run directly from an editor runner, using the constants at the top of `task_dura
 python task_duration.py
 ```
 
-`CLOUD_MODE` defaults to `word-refresh`, so direct runs read `.docx` files through Microsoft Word for better OneDrive accuracy. Set `WORK_ITEM`, `ROOT_DIR`, `CLOUD_MODE`, `INCLUDE_UNSAVED_WORD`, and `VERBOSE` in the script when using an editor runner.
+When using an editor runner extension, put `TASK_DURATION_ROOT`, `TASK_DURATION_WORK_ITEM`, `TASK_DURATION_CLOUD_MODE`, `TASK_DURATION_INCLUDE_UNSAVED_WORD`, and `TASK_DURATION_VERBOSE` in `.env`. The script loads `.env` automatically without requiring extra packages.
 
 Use a local, non-cloud folder from the command line:
 
@@ -160,8 +180,9 @@ This script fetches information about a specific test case from Azure DevOps usi
 #### Usage
 
 1. Ensure you have the required environment variables set in a `.env` file:
-    - `AZURE_DEVOPS_API_VERSION`
     - `AZURE_DEVOPS_ORGANIZATION`
+    - `AZURE_DEVOPS_TEST_CASE_ID`
+    - `AZURE_DEVOPS_API_VERSION`
     - `AZURE_DEVOPS_PAT`
 
 2. Install dependencies:

@@ -158,24 +158,24 @@ class TestTimespanEdgeCases:
 # Full-sample acceptance-criteria tests
 # ---------------------------------------------------------------------------
 
-SAMPLE_TIMESHEET = """
-• Monday
-o Example Task 12345: Fix the broken tests that are related to the sample environment cleanup 8:45-12:15, 12:45-1:45
-o Integration testing 1:45-5:15
-• Tuesday
-o Example Task 12345: Fix the broken tests that are related to the sample environment cleanup 8:45-9, 9:45-12, 12:45-12
-o Engineering/Product - additional until release 9-9:45
-• Wednesday
-o Example Task 12345: Fix the broken tests that are related to the sample environment cleanup 10:30-11:30. 12-5
-o Review Pull Request 1234: Add sample mapping tests 11:30-12
-• Thursday
-o Engineering/Product 9-10
-o Example Task 12345: Fix the broken tests that are related to the sample environment cleanup 10-12, 1-12, 1-2
-o Review Pull Request 1234: pipeline review 4/16 12-1
-• Friday
-o Example Task 12345: Fix the broken tests that are related to the sample environment cleanup 8-12
-o Review Pull Request 1234: Add sample mapping tests 1-5
-"""
+SAMPLE_TIMESHEET = (
+    "\u2022 Monday\n"
+    "o Example Task 12345: Fix sample calculation tests 8:45-12:15, 12:45-1:45\n"
+    "o Integration testing 1:45-5:15\n"
+    "\u2022 Tuesday\n"
+    "o Example Task 12345: Fix sample calculation tests 8:45-9, 9:45-12, 12:45-12\n"
+    "o Product support - release prep 9-9:45\n"
+    "\u2022 Wednesday\n"
+    "o Example Task 12345: Fix sample calculation tests 10:30-11:30. 12-5\n"
+    "o Review Pull Request 1234: Add sample mapping tests 11:30-12\n"
+    "\u2022 Thursday\n"
+    "o Product support 9-10\n"
+    "o Example Task 12345: Fix sample calculation tests 10-12, 1-12, 1-2\n"
+    "o Review Pull Request 1234: Pipeline review 12-1\n"
+    "\u2022 Friday\n"
+    "o Example Task 12345: Fix sample calculation tests 8-12\n"
+    "o Review Pull Request 1234: Add sample mapping tests 1-5\n"
+)
 
 
 class TestAcceptanceCriteria:
@@ -186,16 +186,16 @@ class TestAcceptanceCriteria:
         return timesheet_helper.replace_with_duration(SAMPLE_TIMESHEET)
 
     def test_tuesday_qa_task_hours(self, result):
-        """Tuesday Example Task 12345 should be 13.75 h."""
+        """Tuesday example task should be 13.75 h."""
         import re
         for line in get_day_block(result, "Tuesday"):
             if 'Example Task 12345' in line:
                 m = re.search(r'([\d.]+)\s*$', line.strip())
                 if m:
                     assert float(m.group(1)) == pytest.approx(13.75), \
-                        f"Expected 13.75 h for Tuesday QA Task, got {m.group(1)}"
+                        f"Expected 13.75 h for Tuesday example task, got {m.group(1)}"
                     return
-        pytest.fail("Tuesday Example Task 12345 line not found")
+        pytest.fail("Tuesday example task line not found")
 
     def test_tuesday_total(self, result):
         """Total Tuesday should be 14.5 h."""
@@ -203,16 +203,16 @@ class TestAcceptanceCriteria:
         assert total == pytest.approx(14.5), f"Expected 14.5 h for Tuesday total, got {total}"
 
     def test_thursday_qa_task_hours(self, result):
-        """Thursday Example Task 12345 should be 14.0 h."""
+        """Thursday example task should be 14.0 h."""
         import re
         for line in get_day_block(result, "Thursday"):
             if 'Example Task 12345' in line:
                 m = re.search(r'([\d.]+)\s*$', line.strip())
                 if m:
                     assert float(m.group(1)) == pytest.approx(14.0), \
-                        f"Expected 14.0 h for Thursday QA Task, got {m.group(1)}"
+                        f"Expected 14.0 h for Thursday example task, got {m.group(1)}"
                     return
-        pytest.fail("Thursday Example Task 12345 line not found")
+        pytest.fail("Thursday example task line not found")
 
     def test_thursday_total(self, result):
         """Total Thursday should be 16.0 h."""
@@ -227,7 +227,7 @@ class TestAcceptanceCriteria:
                 assert not re.search(r'\s\.\s', line), \
                     f"Leftover standalone period in Wednesday task: {repr(line)}"
                 return
-        pytest.fail("Wednesday Example Task 12345 line not found")
+        pytest.fail("Wednesday example task line not found")
 
     def test_tuesday_qa_task_no_comma(self, result):
         """Tuesday QA task line (with comma-separated spans) must not contain a leftover comma."""
@@ -236,7 +236,7 @@ class TestAcceptanceCriteria:
                 assert ',' not in line, \
                     f"Leftover comma in Tuesday QA task line: {repr(line)}"
                 return
-        pytest.fail("Tuesday Example Task 12345 line not found")
+        pytest.fail("Tuesday example task line not found")
 
     def test_thursday_qa_task_no_comma(self, result):
         """Thursday QA task line (with comma-separated spans) must not contain a leftover comma."""
@@ -245,7 +245,7 @@ class TestAcceptanceCriteria:
                 assert ',' not in line, \
                     f"Leftover comma in Thursday QA task line: {repr(line)}"
                 return
-        pytest.fail("Thursday Example Task 12345 line not found")
+        pytest.fail("Thursday example task line not found")
 
 
 # ---------------------------------------------------------------------------
