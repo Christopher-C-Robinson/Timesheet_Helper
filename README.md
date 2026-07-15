@@ -52,6 +52,14 @@ python -m pip install -r requirements.txt
 python -m pip install requests python-dotenv pyperclip python-docx
 ```
 
+### VS Code Code Runner
+
+Open this repository folder in VS Code. The workspace configuration sends Code Runner
+to `.venv\Scripts\python.exe`; create that virtual environment once and install
+`requirements.txt`, then click **Run Code** without entering command-line flags.
+`task_duration.py` loads its ignored `.env` file automatically, so its saved folder,
+work-item, Word-refresh, backup, and shared-total settings are used by Code Runner.
+
 For local machine-specific settings, copy the example environment file and edit the
 copy. The real `.env` file is ignored by Git.
 
@@ -122,11 +130,11 @@ This script converts the Flask application to static HTML files suitable for Git
 
 ### remove_times.py
 
-This script defines a function `remove_timespans` that removes time spans from the text.
+This script defines a function `remove_timespans` that removes time spans and terminal submitted totals from the text.
 
 ### timesheet_helper.py
 
-This script defines a function `replace_with_duration` that replaces time spans in the text with their corresponding durations.
+This script defines a function `replace_with_duration` that supports both typed time spans and terminal submitted totals such as ` - 8.75 hrs`.
 
 ### timesheet.py
 
@@ -134,7 +142,7 @@ This script imports functions from the other two scripts and processes a text-ba
 
 ### task_duration.py
 
-This script scans a root directory for `.docx`/`.txt` files and totals time spans from lines that match a work item identifier. It is OneDrive-aware and can read `.docx` files through Microsoft Word so stale local OneDrive copies are less likely to be trusted silently. Install `python-docx` if you use `.docx` files from disk.
+This script scans a root directory for `.docx`/`.txt` files and totals time spans or terminal submitted totals from matching work-item lines. A submitted total wins over embedded ranges. It skips `Backup Before Reconciliation - *` folders by default and keeps a multi-work-item submitted total out of the exact total unless shared totals are explicitly enabled. It is OneDrive-aware and can read `.docx` files through Microsoft Word so stale local OneDrive copies are less likely to be trusted silently.
 
 Machine-specific defaults should live in `.env`, not in the public script:
 
@@ -143,6 +151,8 @@ TASK_DURATION_ROOT=C:\Users\you\OneDrive - Example Org\Timesheet Notes
 TASK_DURATION_WORK_ITEM=12345
 TASK_DURATION_CLOUD_MODE=word-refresh
 TASK_DURATION_VERBOSE=false
+TASK_DURATION_INCLUDE_BACKUPS=false
+TASK_DURATION_INCLUDE_SHARED_TOTALS=false
 ```
 
 #### Usage

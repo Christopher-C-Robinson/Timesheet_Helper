@@ -17,7 +17,7 @@ static_app = Flask(__name__)
 @static_app.route("/")
 def index():
     """Serve the static version of the index page"""
-    with open('templates/static_index.html', 'r') as f:
+    with open('templates/static_index.html', 'r', encoding='utf-8') as f:
         return f.read()
 
 def main():

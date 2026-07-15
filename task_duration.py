@@ -8,17 +8,19 @@ import stat
 import subprocess
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from pathlib import Path
 from typing import Callable, Iterable, List, Mapping, Optional, Sequence, Tuple
 from urllib.parse import unquote, urlparse
 
+from duration_parser import parse_duration, referenced_work_item_ids
 
-TIME_PATTERN = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
+
 DEFAULT_ROOT_DIR = Path.cwd()
 DEFAULT_WORK_ITEM = "12345"
 DEFAULT_EXTENSIONS = [".docx"]
 DEFAULT_CLOUD_MODE = "fail"
+BACKUP_DIRECTORY_PREFIX = "backup before reconciliation - "
 
 
 def parse_dotenv_line(line: str) -> Optional[Tuple[str, str]]:
@@ -92,6 +94,8 @@ CLOUD_MODE = env_choice(
 )
 INCLUDE_UNSAVED_WORD = env_bool("TASK_DURATION_INCLUDE_UNSAVED_WORD", False)
 VERBOSE = env_bool("TASK_DURATION_VERBOSE", False)
+INCLUDE_BACKUPS = env_bool("TASK_DURATION_INCLUDE_BACKUPS", False)
+INCLUDE_SHARED_TOTALS = env_bool("TASK_DURATION_INCLUDE_SHARED_TOTALS", False)
 
 
 class TaskDurationError(Exception):
@@ -172,7 +176,7 @@ ConvertTo-Json -InputObject $docs -Depth 6 -Compress
     REFRESH_SCRIPT = r"""
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-$targetPath = $args[0]
+$targetPath = $env:TASK_DURATION_WORD_TARGET
 $createdWord = $false
 $word = $null
 $doc = $null
@@ -202,7 +206,7 @@ try {
 
     $oldAlerts = $word.DisplayAlerts
     $word.DisplayAlerts = 0
-    $doc = $word.Documents.Open($targetPath, $false, $true)
+    $doc = $word.Documents.Open($targetPath, $false, $true, $false)
 
     $result = [pscustomobject]@{
         lines = @(Get-DocumentLines $doc)
@@ -231,6 +235,10 @@ try {
         if not self.executable:
             raise WordProviderError("PowerShell is required for Word automation on Windows.")
 
+        environment = os.environ.copy()
+        if args:
+            environment["TASK_DURATION_WORD_TARGET"] = args[0]
+
         completed = subprocess.run(
             [
                 self.executable,
@@ -240,13 +248,13 @@ try {
                 "Bypass",
                 "-Command",
                 script,
-                *args,
             ],
             capture_output=True,
             text=True,
             encoding="utf-8",
             errors="replace",
             timeout=120,
+            env=environment,
         )
         if completed.returncode != 0:
             message = completed.stderr.strip() or completed.stdout.strip()
@@ -423,30 +431,46 @@ def decode_word_documents(value: object) -> List[WordDocument]:
 
 
 def duration_from_line(line: str) -> timedelta:
-    total = timedelta()
-    for match in re.finditer(TIME_PATTERN, line):
-        start_hour = int(match.group(1))
-        start_minute = int(match.group(2)[1:]) if match.group(2) else 0
-        end_hour = int(match.group(3))
-        end_minute = int(match.group(4)[1:]) if match.group(4) else 0
-
-        start = datetime(year=2000, month=1, day=1, hour=start_hour, minute=start_minute)
-        end = datetime(year=2000, month=1, day=1, hour=end_hour, minute=end_minute)
-        if end < start:
-            end += timedelta(hours=12)  # Afternoon handling (no midnight crossing assumed)
-        total += end - start
-    return total
+    """Return a submitted total when present, otherwise legacy range duration."""
+    parsed = parse_duration(line)
+    return timedelta(hours=parsed.hours) if parsed is not None else timedelta()
 
 
-def iter_files(root: Path, exts: Iterable[str]) -> Iterable[Path]:
+def is_reconciliation_backup_directory(name: str) -> bool:
+    return name.casefold().startswith(BACKUP_DIRECTORY_PREFIX)
+
+
+def iter_files(root: Path, exts: Iterable[str], include_backups: bool = False) -> Iterable[Path]:
+    """Yield eligible files while excluding reconciliation backups by default."""
+    if not include_backups and is_reconciliation_backup_directory(root.name):
+        return
     normalized_exts = {ext.lower() if ext.startswith(".") else f".{ext.lower()}" for ext in exts}
-    for path in root.rglob("*"):
-        if not path.is_file():
-            continue
-        if path.name.startswith("~$"):  # Skip Word temp files
-            continue
-        if path.suffix.lower() in normalized_exts:
-            yield path
+    for directory, child_directories, file_names in os.walk(root):
+        if not include_backups:
+            child_directories[:] = [
+                child for child in child_directories
+                if not is_reconciliation_backup_directory(child)
+            ]
+        for file_name in file_names:
+            path = Path(directory) / file_name
+            if path.name.startswith("~$"):
+                continue
+            if path.suffix.lower() in normalized_exts:
+                yield path
+
+
+def work_item_id_from_query(work_item: str) -> Optional[str]:
+    match = re.fullmatch(r"#?(\d+)", work_item.strip())
+    return match.group(1) if match else None
+
+
+def is_shared_submitted_total(line: str, work_item: str) -> bool:
+    parsed = parse_duration(line)
+    work_item_id = work_item_id_from_query(work_item)
+    if parsed is None or parsed.source != "submitted-total" or work_item_id is None:
+        return False
+    ids = referenced_work_item_ids(line)
+    return work_item_id in ids and len(ids) > 1
 
 
 def extract_lines_from_disk(path: Path) -> List[str]:
@@ -722,6 +746,24 @@ def build_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--include-backups",
+        action="store_true",
+        default=INCLUDE_BACKUPS,
+        help=(
+            "Include directories named 'Backup Before Reconciliation - *'. "
+            "Can also be set with TASK_DURATION_INCLUDE_BACKUPS=true."
+        ),
+    )
+    parser.add_argument(
+        "--include-shared-totals",
+        action="store_true",
+        default=INCLUDE_SHARED_TOTALS,
+        help=(
+            "Include submitted-total rows that name multiple work items. "
+            "Can also be set with TASK_DURATION_INCLUDE_SHARED_TOTALS=true."
+        ),
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         default=VERBOSE,
@@ -740,7 +782,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     work_item_pattern = re.compile(rf"\b{re.escape(args.work_item)}\b", re.IGNORECASE)
 
     try:
-        files = list(iter_files(root, EXTENSIONS))
+        files = list(iter_files(root, EXTENSIONS, include_backups=args.include_backups))
         cloud_backed = validate_cloud_mode(root, files, args.cloud_mode)
         if cloud_backed and args.cloud_mode in {"trust-local", "word-refresh"}:
             print(
@@ -758,8 +800,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         verbose=verbose,
     )
 
-    total_duration = timedelta()
-    matches_found = 0
+    exact_total_hours = 0.0
+    shared_total_hours = 0.0
+    exact_matches = 0
+    shared_matches = 0
 
     for file_path in files:
         try:
@@ -777,26 +821,53 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             if not work_item_pattern.search(line):
                 continue
 
-            line_duration = duration_from_line(line)
-            if line_duration.total_seconds() == 0:
+            parsed = parse_duration(line)
+            if parsed is None:
                 if verbose:
-                    print(f"Warning: No time spans found in matched line: {file_path} | {line}")
+                    print(
+                        "Warning: No submitted total or complete time range found in matched line: "
+                        f"{file_path} | {line}"
+                    )
                 continue
 
-            hours = line_duration.total_seconds() / 3600
+            hours = parsed.hours
             prefix = f"{file_path} [{source}]" if verbose else str(file_path)
-            print(f"{prefix} | {line} | {hours:.2f} hours")
-            total_duration += line_duration
-            matches_found += 1
+            if is_shared_submitted_total(line, args.work_item):
+                print(f"{prefix} | SHARED source total | {line} | {hours:.2f} hours")
+                shared_total_hours += hours
+                shared_matches += 1
+            else:
+                print(f"{prefix} | {line} | {hours:.2f} hours")
+                exact_total_hours += hours
+                exact_matches += 1
             file_has_match = True
 
         if verbose and not file_has_match:
             print(f"Info: No matches in {file_path}")
 
-    total_hours = total_duration.total_seconds() / 3600
     print("-" * 80)
-    print(f"Total hours for work item {args.work_item}: {total_hours:.2f}")
-    print(f"Lines matched: {matches_found}")
+    print(f"Exact total for work item {args.work_item}: {exact_total_hours:.2f}")
+    print(f"Exact lines matched: {exact_matches}")
+    if shared_matches:
+        if args.include_shared_totals:
+            print(
+                f"Shared source rows included: {shared_matches} "
+                f"({shared_total_hours:.2f} hours)"
+            )
+            print(
+                f"Total hours for work item {args.work_item} "
+                f"(including shared source totals): "
+                f"{exact_total_hours + shared_total_hours:.2f}"
+            )
+        else:
+            print(
+                f"Shared source rows excluded: {shared_matches} "
+                f"({shared_total_hours:.2f} hours)"
+            )
+            print(
+                "Potential total including shared source rows: "
+                f"{exact_total_hours + shared_total_hours:.2f}"
+            )
     return 0
 
 

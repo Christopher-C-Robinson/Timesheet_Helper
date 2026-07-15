@@ -1,42 +1,22 @@
 import re
 
+from duration_parser import strip_duration_annotations
+
+
 def remove_timespans(text):
-    """
-    Remove timespans from the given text and format it into a specific structure.
-
-    Args:
-        text (str): The input text containing timespans and tasks.
-
-    Returns:
-        str: The formatted text with timespans removed and tasks organized.
-
-    """
-    pattern = r"\b\d{1,2}(:\d{1,2})?-\d{1,2}(:\d{1,2})?\b[,.]? *"
-    result = re.sub(pattern, "", text)
-    lines = result.split('\n')
-
-    BOLD = "\033[1m"
-    UNDERLINE = "\033[4m"
-    END = "\033[0m"
-
-    day_tasks = []
-    output = []
-
-    for line in lines:
-        is_day_line = re.match(r'^\s*•\s*(\w+day)', line)
-        if is_day_line:
+    """Format a timesheet for email without time ranges or submitted totals."""
+    BOLD, UNDERLINE, END = "\033[1m", "\033[4m", "\033[0m"
+    day_tasks, output = [], []
+    for line in text.split("\n"):
+        if re.match(r"^\s*•\s*(\w+day)", line):
             if day_tasks:
-                output.append('\n'.join(day_tasks) + '\n')
+                output.append("\n".join(day_tasks) + "\n")
                 day_tasks = []
-            day = re.sub(r'^\s*•\s*(\w+day)', r'\1', line)
-            day = re.sub(r'(\w+day)', BOLD + UNDERLINE + r'\1' + END, day)
-            day_tasks.append(day)
-        else:
-            task = re.sub(r'^\s*o\s*', '\t• ', line)
-            day_tasks.append(task)
-
+            day = re.sub(r"^\s*•\s*(\w+day)", r"\1", line)
+            day_tasks.append(re.sub(r"(\w+day)", BOLD + UNDERLINE + r"\1" + END, day))
+            continue
+        task = re.sub(r"^\s*o\s*", "\t• ", strip_duration_annotations(line))
+        day_tasks.append(task)
     if day_tasks:
-        output.append('\n'.join(day_tasks) + '\n')
-
-    result = '\n'.join(output)
-    return result
+        output.append("\n".join(day_tasks) + "\n")
+    return "\n".join(output)

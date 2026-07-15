@@ -165,10 +165,11 @@
 
         <div class="example">
             <h4>How to use:</h4>
-            <p style="margin:0 0 8px 0;">Paste your bulleted timesheet from Microsoft Word. Format:</p>
+            <p style="margin:0 0 8px 0;">Paste your bulleted timesheet from Microsoft Word. Use either time ranges or a terminal submitted total:</p>
             <pre>•&#9;Monday
 o&#9;task1 9:15-9:30, 10-12:15
 o&#9;task2 9:30-10
+o&#9;Recovered submitted work - 8.75 hrs
 •&#9;Tuesday
 o&#9;task1 9-9:30, 10:30-12:15
 o&#9;task2 9:30-10:30</pre>
@@ -299,9 +300,85 @@ o&#9;task2 9:30-10:30</pre>
 
         // ── UI helpers ──
 
+        const TIME_RANGE_PATTERN = /(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b/g;
+        const TIME_RANGE_WITH_SEPARATOR_PATTERN = /\b\d{1,2}(?::\d{1,2})?-\d{1,2}(?::\d{1,2})?\b[,.]?\s*/g;
+        const SUBMITTED_HOURS_PATTERN = /\s[-\u2013\u2014]\s*(\d+(?:\.\d+)?)\s*(?:hrs?|hours?)\s*$/i;
+
+        function stripTimeRanges(text) {
+            return text.replace(TIME_RANGE_WITH_SEPARATOR_PATTERN, '').trim();
+        }
+
+        function parseSubmittedOrRangeDuration(line) {
+            const submitted = line.match(SUBMITTED_HOURS_PATTERN);
+            if (submitted) {
+                return { hours: parseFloat(submitted[1]), task: stripTimeRanges(line.slice(0, submitted.index)) };
+            }
+            let hours = 0;
+            let matched = false;
+            for (const match of line.matchAll(TIME_RANGE_PATTERN)) {
+                const start = parseInt(match[1], 10) * 60 + (match[2] ? parseInt(match[2].slice(1), 10) : 0);
+                let end = parseInt(match[3], 10) * 60 + (match[4] ? parseInt(match[4].slice(1), 10) : 0);
+                if (end < start) end += 12 * 60;
+                hours += (end - start) / 60;
+                matched = true;
+            }
+            return matched ? { hours, task: stripTimeRanges(line) } : null;
+        }
+
+        function removeTimespans(text) {
+            const output = [];
+            let dayTasks = [];
+            for (const line of text.split('\n')) {
+                if (/^\s*\u2022\s*(\w+day)/.test(line)) {
+                    if (dayTasks.length) output.push(dayTasks.join('\n') + '\n');
+                    dayTasks = [line.replace(/^\s*\u2022\s*(\w+day)/, '$1')];
+                } else {
+                    const submitted = line.match(SUBMITTED_HOURS_PATTERN);
+                    const task = stripTimeRanges(submitted ? line.slice(0, submitted.index) : line)
+                        .replace(/^\s*o\s*/, '\t\u2022 ');
+                    dayTasks.push(task);
+                }
+            }
+            if (dayTasks.length) output.push(dayTasks.join('\n') + '\n');
+            return output.join('\n');
+        }
+
+        function replaceWithDuration(text) {
+            const output = [];
+            let dayTasks = [];
+            let dayTotal = 0;
+            let weeklyTotal = 0;
+            for (const line of text.split('\n')) {
+                if (/^\s*\u2022\s*(\w+day)/.test(line)) {
+                    if (dayTasks.length) {
+                        dayTasks[0] += ` Total: ${dayTotal.toFixed(2)} hours`;
+                        output.push(dayTasks.join('\n'));
+                        weeklyTotal += dayTotal;
+                    }
+                    dayTasks = [line.replace(/^\s*\u2022\s*(\w+day)/, '$1')];
+                    dayTotal = 0;
+                    output.push('');
+                    continue;
+                }
+                const parsed = parseSubmittedOrRangeDuration(line);
+                if (parsed) {
+                    dayTasks.push(`${parsed.task.replace(/^\s*o\s*/, '\u2022 ')} ${parsed.hours.toFixed(2)}\n`);
+                    dayTotal += parsed.hours;
+                }
+            }
+            if (dayTasks.length) {
+                dayTasks[0] += ` Total: ${dayTotal.toFixed(2)} hours`;
+                output.push(dayTasks.join('\n'));
+                weeklyTotal += dayTotal;
+            }
+            output.push(`\nWeekly Total: ${weeklyTotal.toFixed(2)} hours`);
+            return output.join('\n');
+        }
+
         const SAMPLE_TIMESHEET = `\u2022\tMonday
 o\tStandup 8:30-8:45
 o\tCode review 8:45-10
+o\tRecovered submitted work - 8.75 hrs
 o\tFeature work 10-12, 1-3
 o\tTeam meeting 3-4
 \u2022\tTuesday
