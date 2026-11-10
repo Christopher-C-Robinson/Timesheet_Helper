@@ -1,0 +1,84 @@
+
+Monday Total: 11.00 hours
+• Complete Pull Request 6909: QA Task 39281: Move SCIM test 36254 from Defect 39251 to Defect 39299 0.25
+
+• QA Feature 37871: Android Application 3rd Party Data Background Sync 6.25
+
+• Engineering Status Check-In 0.50
+
+• Complete Pull Request 6931: QA: List-page automated tests 39305-39309 0.50
+
+• QA Feature 37873: iOS Application 3rd Party Data Background Sync 1.00
+
+• QA Feature 38649: Background Pending Form Submission 0.50
+
+• Review Pull Request 6934 0.25
+
+• Close completed and stale QA items 1.00
+
+• Create Pull Request 6949: QA Task 38658: Automated tests for Bug 31262 (action buttons excluded from condition builder) 0.25
+
+• Create Pull Request 6950: Test fixes from Next run 145058: versioning, theme colors, GET failure, and static table color 0.50
+
+
+Tuesday Total: 11.50 hours
+• QA Feature 38488: Forms Pro Application Interface Updates 2026 3.75
+
+• Pipeline review: Next run 145058 failures 0.50
+
+• QA Feature 37871: Android Application 3rd Party Data Background Sync 0.25
+
+• Update Pull Request 6950: Test fixes from Next run 145058: versioning, theme colors, GET failure, and static table color 0.75
+
+• Update Pull Request 6949: QA Task 38658: Automated tests for Bug 31262 (action buttons excluded from condition builder) 0.25
+
+• QA Bug 39366: Loading large data payloads from SQLite storage causes crashes on the Android app (Support 50512755999) 5.75
+
+• Complete Pull Request 6949: QA Task 38658: Automated tests for Bug 31262 (action buttons excluded from condition builder) 0.25
+
+
+Wednesday Total: 12.25 hours
+• QA Feature 38488: Forms Pro Application Interface Updates 2026 3.75
+
+• QA Bug 39366: Loading large data payloads from SQLite storage causes crashes on the Android app (Support 50512755999) 0.25
+
+• Write up Defect 39367: App Refresh: Start a New Form and Assigned to You stay empty after login or user switch until the page is reloaded 0.25
+
+• Pipeline review 0.25
+
+• Complete Pull Request 6950: Test fixes from Next run 145058: versioning, theme colors, GET failure, and static table color 0.25
+
+• FormsPro repository updates: release 2610.0.0 branch sync 0.25
+
+• Close completed automation QA 0.25
+
+• QA Feature 37871: Android Application 3rd Party Data Background Sync 5.25
+
+• Create Pull Request 6997: QA: Admin API connections + background-sync API log E2E (38641, 38642) 1.50
+
+• Update Pull Request 6997: QA: Admin API connections + background-sync API log E2E (38641, 38642) 0.25
+
+
+Thursday Total: 12.75 hours
+• Pipeline review 0.75
+
+• Engineering/Product Check-in 1.50
+
+• QA Feature 37871: Android Application 3rd Party Data Background Sync 1.50
+
+• Create Pull Request 6998: App Refresh unique placeholder QA 1.25
+
+• QA Feature 38488: Forms Pro Application Interface Updates 2026 7.75
+
+
+Friday Total: 6.75 hours
+• Update Pull Request 6998: App Refresh unique placeholder QA 2.50
+
+• Create Pull Request 7003: QA: validate Forms SQL targets and remove credential fallbacks 0.75
+
+• Update Pull Request 7003: QA: validate Forms SQL targets and remove credential fallbacks 1.75
+
+• QA Feature 37871: Android Application 3rd Party Data Background Sync 1.75
+
+
+Weekly Total: 54.25 hours

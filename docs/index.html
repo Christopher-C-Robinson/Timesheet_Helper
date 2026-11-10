@@ -208,10 +208,56 @@ o&#9;task2 9:30-10:30</pre>
     <script>
         // ── Timesheet processing (mirrors timesheet_helper.py / remove_times.py) ──
 
+        // One time range such as 8-9, 12:45-5, or 10:30-11:30 (12-hour clock).
+        const TIME_RANGE_SRC = '\\d{1,2}(?::\\d{1,2})?-\\d{1,2}(?::\\d{1,2})?';
+        // Separators accepted between ranges: comma, semicolon, period, ampersand, "and",
+        // or plain whitespace, with any amount of surrounding space.
+        const RANGE_SEP_SRC = '(?:\\s*[,;&.]\\s*(?:and\\s+)?|\\s+(?:and\\s+)?)';
+        // The time-range list at the end of a task line, plus the separators and
+        // whitespace around it. The lookbehind keeps it from starting inside a
+        // title token such as 39305-39309, 2610.0.0, or Check-In.
+        const TRAILING_RANGES = new RegExp(
+            '[\\s,;]*(?<![\\w:.\\-])(' + TIME_RANGE_SRC + '(?:' + RANGE_SEP_SRC + TIME_RANGE_SRC + ')*)[\\s,;.]*$'
+        );
+        const DURATION_PATTERN = /(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b/g;
+
+        // Split a task line into its title and its time-range text. Only the
+        // trailing range list and its separators are removed, so commas and
+        // numbers inside the title are kept as typed.
+        function splitTaskLine(line) {
+            const m = line.match(TRAILING_RANGES);
+            if (m) {
+                return { title: line.slice(0, m.index).trimEnd(), ranges: m[1] };
+            }
+            // Fallback for ranges that are not at the end of the line: drop each
+            // range with its trailing separator, then tidy leftover spacing.
+            if (line.match(DURATION_PATTERN)) {
+                const title = line
+                    .replace(new RegExp('\\b' + TIME_RANGE_SRC + '\\b' + '(?:\\s*[,;.])?', 'g'), '')
+                    .replace(/[ \t]{2,}/g, ' ')
+                    .replace(/[\s,;]+$/, '');
+                return { title: title, ranges: line };
+            }
+            return { title: line, ranges: '' };
+        }
+
+        function calculateDuration(startHour, startMin, endHour, endMin) {
+            const startHourInt = parseInt(startHour);
+            const startMinInt = startMin ? parseInt(startMin.slice(1)) : 0;
+            const endHourInt = parseInt(endHour);
+            const endMinInt = endMin ? parseInt(endMin.slice(1)) : 0;
+
+            const startTotalMin = startHourInt * 60 + startMinInt;
+            let endTotalMin = endHourInt * 60 + endMinInt;
+            // If end total minutes is less than start total minutes, assume afternoon (add 12h), matching Python logic
+            if (endTotalMin < startTotalMin) {
+                endTotalMin += 12 * 60;
+            }
+            return (endTotalMin - startTotalMin) / 60;
+        }
+
         function removeTimespans(text) {
-            const pattern = /\b\d{1,2}(:\d{1,2})?-\d{1,2}(:\d{1,2})?\b,? */g;
-            let result = text.replace(pattern, '');
-            const lines = result.split('\n');
+            const lines = text.split('\n');
             let dayTasks = [];
             let output = [];
 
@@ -225,7 +271,7 @@ o&#9;task2 9:30-10:30</pre>
                     let day = line.replace(/^\s*•\s*(\w+day)/, '$1');
                     dayTasks.push(day);
                 } else {
-                    let task = line.replace(/^\s*o\s*/, '\t• ');
+                    let task = splitTaskLine(line).title.replace(/^\s*o\s*/, '\t• ');
                     dayTasks.push(task);
                 }
             }
@@ -236,23 +282,6 @@ o&#9;task2 9:30-10:30</pre>
         }
 
         function replaceWithDuration(text) {
-            const pattern = /(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b/g;
-
-            function calculateDuration(match, startHour, startMin, endHour, endMin) {
-                const startHourInt = parseInt(startHour);
-                const startMinInt = startMin ? parseInt(startMin.slice(1)) : 0;
-                const endHourInt = parseInt(endHour);
-                const endMinInt = endMin ? parseInt(endMin.slice(1)) : 0;
-
-                const startTotalMin = startHourInt * 60 + startMinInt;
-                let endTotalMin = endHourInt * 60 + endMinInt;
-                // If end total minutes is less than start total minutes, assume afternoon (add 12h), matching Python logic
-                if (endTotalMin < startTotalMin) {
-                    endTotalMin += 12 * 60;
-                }
-                return (endTotalMin - startTotalMin) / 60;
-            }
-
             const lines = text.split('\n');
             let dayTotalDuration = 0;
             let weeklyTotalDuration = 0;
@@ -273,15 +302,16 @@ o&#9;task2 9:30-10:30</pre>
                     output.push('');
                     dayTasks.push(day);
                 } else {
+                    const parts = splitTaskLine(line);
                     let totalDuration = 0;
-                    let matches = [...line.matchAll(pattern)];
+                    let matches = [...parts.ranges.matchAll(DURATION_PATTERN)];
                     for (let match of matches) {
-                        const d = calculateDuration(match[0], match[1], match[2], match[3], match[4]);
+                        const d = calculateDuration(match[1], match[2], match[3], match[4]);
                         totalDuration += d;
                         dayTotalDuration += d;
                     }
                     if (matches.length > 0) {
-                        let task = line.replace(pattern, '').replace(/,?\s*$/, '').trim();
+                        let task = parts.title.trim();
                         task = task.replace(/^\s*o\s*/, '• ');
                         task += ` ${totalDuration.toFixed(2)}\n`;
                         dayTasks.push(task);
