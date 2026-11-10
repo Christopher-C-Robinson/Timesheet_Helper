@@ -1,6 +1,39 @@
 import re
 from datetime import datetime, timedelta
 
+# One time range such as 8-9, 12:45-5, or 10:30-11:30 (12-hour clock).
+TIME_RANGE = r"\d{1,2}(?::\d{1,2})?-\d{1,2}(?::\d{1,2})?"
+# Separators accepted between ranges: comma, semicolon, period, ampersand,
+# "and", or plain whitespace, with any amount of surrounding space.
+RANGE_SEP = r"(?:\s*[,;&.]\s*(?:and\s+)?|\s+(?:and\s+)?)"
+# The time-range list at the end of a task line, plus the separators and
+# whitespace around it. The lookbehind keeps it from starting inside a title
+# token such as 39305-39309, 2610.0.0, or Check-In.
+TRAILING_RANGES = re.compile(
+    r"[\s,;]*(?<![\w:.\-])(" + TIME_RANGE + r"(?:" + RANGE_SEP + TIME_RANGE + r")*)[\s,;.]*$"
+)
+DURATION_PATTERN = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
+
+
+def split_task_line(line):
+    """
+    Split a task line into (title, ranges_text).
+
+    Only the trailing time-range list and its separators are removed, so
+    commas and numbers inside the title are kept as typed. Mirrors
+    splitTaskLine in docs/index.html.
+    """
+    m = TRAILING_RANGES.search(line)
+    if m:
+        return line[:m.start()].rstrip(), m.group(1)
+    if re.search(DURATION_PATTERN, line):
+        # Fallback for ranges that are not at the end of the line.
+        title = re.sub(r"\b" + TIME_RANGE + r"\b(?:\s*[,;.])?", "", line)
+        title = re.sub(r"[ \t]{2,}", " ", title)
+        title = re.sub(r"[\s,;]+$", "", title)
+        return title, line
+    return line, ""
+
 def replace_with_duration(text):
     """
     Replaces time durations in the given text with their corresponding durations in hours.
@@ -11,7 +44,7 @@ def replace_with_duration(text):
     Returns:
         str: The modified text with time durations replaced by their corresponding durations in hours.
     """
-    pattern = r"(\b\d{1,2})(:\d{1,2})?-(\d{1,2})(:\d{1,2})?\b"
+    pattern = DURATION_PATTERN
 
     def duration(match):
         start_hour = int(match.group(1))
@@ -53,7 +86,8 @@ def replace_with_duration(text):
             output.append('')
             day_tasks.append(day)
         else:
-            timespans = re.finditer(pattern, line)
+            title, ranges = split_task_line(line)
+            timespans = re.finditer(pattern, ranges)
             total_duration = timedelta()
             for timespan in timespans:
                 span_duration = duration(timespan)
@@ -63,8 +97,8 @@ def replace_with_duration(text):
             total_duration_hours = total_duration.total_seconds() / 3600
             total_duration_hours = "{:.2f}".format(total_duration_hours)
 
-            if re.search(pattern, line):
-                task = re.sub(pattern + r'[,.]?', '', line).strip()
+            if re.search(pattern, ranges):
+                task = title.strip()
                 task = re.sub(r'^\s*o\s*', '• ', task)
                 task += f" {total_duration_hours}\n"  # Add a newline character here
                 day_tasks.append(task)

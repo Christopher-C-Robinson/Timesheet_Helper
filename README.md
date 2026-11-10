@@ -275,3 +275,8 @@ All original functionality is preserved in the static version, including:
 ## Contributing
 
 If you would like to contribute to the Timesheet Helper project, please feel free to fork the repository, create a feature branch, and submit a pull request.
+
+## Tests
+
+- `npm test` runs the GitHub Pages logic straight from `docs/index.html` against the sample week in `tests/fixtures/` (Node 22 or newer, no dependencies).
+- `python -m pytest -q` runs the Python helper tests, including the same sample week.

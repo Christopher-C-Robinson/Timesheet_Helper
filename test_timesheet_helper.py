@@ -136,11 +136,13 @@ class TestTimespanEdgeCases:
         result = timesheet_helper.replace_with_duration(text)
         clean = re.sub(r'\033\[[0-9;]*m', '', result)
         for line in clean.split('\n'):
-            if 'Task' in line:
+            if 'Sample item' in line:
                 # A leftover separator period appears as ` . ` (space-period-space) before the hours
                 assert not re.search(r'\s\.\s', line), \
                     f"Leftover standalone period in task line: {repr(line)}"
                 break
+        else:
+            pytest.fail("Sample item line not found in replace_with_duration output")
 
     def test_comma_separated_spans_no_comma_in_output(self):
         """Multiple comma-separated spans must not leave a leftover comma in the task line."""
@@ -148,10 +150,12 @@ class TestTimespanEdgeCases:
         result = timesheet_helper.replace_with_duration(text)
         clean = re.sub(r'\033\[[0-9;]*m', '', result)
         for line in clean.split('\n'):
-            if 'Task' in line:
+            if 'Sample item' in line:
                 assert ',' not in line, \
                     f"Leftover comma in task line: {repr(line)}"
                 break
+        else:
+            pytest.fail("Sample item line not found in replace_with_duration output")
 
 
 # ---------------------------------------------------------------------------
@@ -323,3 +327,74 @@ class TestRemoveTimes:
                 assert ',' not in line, f"Leftover comma in remove_timespans output: {repr(line)}"
                 return
         pytest.fail("Sample item line not found in remove_timespans output")
+
+
+
+# ---------------------------------------------------------------------------
+# Full-week regression fixture (shared with tests/timesheet.test.mjs)
+# ---------------------------------------------------------------------------
+
+
+import os
+
+FIXTURE_DIR = os.path.join(os.path.dirname(__file__), 'tests', 'fixtures')
+
+
+def _read_fixture(name):
+    with open(os.path.join(FIXTURE_DIR, name), encoding='utf-8') as f:
+        return f.read()
+
+
+class TestSampleWeekFixture:
+    """Multi-range task lines must not leave separators behind the title."""
+
+    @pytest.fixture
+    def result(self):
+        return strip_ansi(timesheet_helper.replace_with_duration(_read_fixture('sample-week.txt')))
+
+    def test_task_lines_match_expected(self, result):
+        expected = [
+            line for line in _read_fixture('sample-week.expected-duration.txt').split('\n')
+            if line.startswith('• ')
+        ]
+        actual = [line for line in result.split('\n') if line.startswith('• ')]
+        assert actual == expected
+
+    def test_no_dangling_separators(self, result):
+        for line in result.split('\n'):
+            assert ' ,' not in line, repr(line)
+            assert not re.search(r'[,;]\s*[\d.]+$', line), repr(line)
+
+    def test_totals_unchanged(self, result):
+        assert extract_day_total(result, 'Monday') == pytest.approx(11.0)
+        assert extract_day_total(result, 'Tuesday') == pytest.approx(11.5)
+        assert extract_day_total(result, 'Wednesday') == pytest.approx(12.25)
+        assert extract_day_total(result, 'Thursday') == pytest.approx(12.75)
+        assert extract_day_total(result, 'Friday') == pytest.approx(6.75)
+        assert extract_weekly_total(result) == pytest.approx(54.25)
+
+    def test_email_format_titles(self, result):
+        email = strip_ansi(remove_times.remove_timespans(_read_fixture('sample-week.txt')))
+        expected = [
+            line for line in _read_fixture('sample-week.expected-email.txt').split('\n')
+            if line.startswith('\t• ')
+        ]
+        actual = [line for line in email.split('\n') if line.startswith('\t• ')]
+        assert actual == expected
+
+
+@pytest.mark.parametrize('ranges', [
+    '8-9, 10-11, 1-2',
+    '8-9,10-11,1-2',
+    '8-9 , 10-11 , 1-2',
+    '8-9; 10-11; 1-2',
+    '8-9, 10-11 and 1-2',
+    '8-9, 10-11, and 1-2',
+    '8-9 & 10-11 & 1-2',
+    '8-9.  10-11.  1-2',
+    '8-9,   10-11,1-2,  ',
+])
+def test_separator_variants(ranges):
+    title = 'QA: Admin API (38641, 38642) tests 39305-39309'
+    out = strip_ansi(timesheet_helper.replace_with_duration(f'• Monday\no\t{title} {ranges}\n'))
+    assert f'• {title} 3.00' in out.split('\n')

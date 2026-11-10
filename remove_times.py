@@ -1,5 +1,7 @@
 import re
 
+from timesheet_helper import split_task_line
+
 def remove_timespans(text):
     """
     Remove timespans from the given text and format it into a specific structure.
@@ -11,9 +13,7 @@ def remove_timespans(text):
         str: The formatted text with timespans removed and tasks organized.
 
     """
-    pattern = r"\b\d{1,2}(:\d{1,2})?-\d{1,2}(:\d{1,2})?\b[,.]? *"
-    result = re.sub(pattern, "", text)
-    lines = result.split('\n')
+    lines = text.split('\n')
 
     BOLD = "\033[1m"
     UNDERLINE = "\033[4m"
@@ -32,7 +32,7 @@ def remove_timespans(text):
             day = re.sub(r'(\w+day)', BOLD + UNDERLINE + r'\1' + END, day)
             day_tasks.append(day)
         else:
-            task = re.sub(r'^\s*o\s*', '\t• ', line)
+            task = re.sub(r'^\s*o\s*', '\t• ', split_task_line(line)[0])
             day_tasks.append(task)
 
     if day_tasks:
